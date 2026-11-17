@@ -74,7 +74,7 @@ function displayRouteChoices(routes,index=0) {
   routeChoices=routes;
   $('route-choices').hidden=!routes.length;
   $('focus-route-choice').hidden=routes.length<2;
-  $('route-choice-status').textContent=routes.length===1?'One route available. Choose a waypoint to request a different corridor.':'';
+  $('route-choice-status').textContent=routes[0]?.segmented?'Continuous '+vehicleLabel(activeRouteVehicle)+' route · '+routes[0].segmentCount+' provider-routed sections. Mapped restrictions may be incomplete; follow posted signs.':routes.length===1?'One route available. Choose a waypoint to request a different corridor.':'';
   for(const id of ['route-choice','focus-route-choice']){
     const select=$(id);
     select.replaceChildren(...routes.map((route,i)=>new Option(routeOptionLabel(route,i),String(i))));
@@ -186,7 +186,7 @@ function drawRoute(){syncNavigationData();
   const driving=document.body.classList.contains('driving');
   const fitMain=!driving&&!mainMapBrowsing&&lastMainFitRevision!==routeRevision;
   if(fitMain){lastMainFitRevision=routeRevision;fitNavigationRoute()}
-  if(!map)return;if(routeLayer)map.removeLayer(routeLayer);routeLayer=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#1564bf',weight:9,opacity:1}).addTo(map);markers.forEach(m=>map.removeLayer(m));markers=[];targets.filter(facilityVisible).forEach(t=>{const pin=t.routeCoord||t.coord;const m=L.circleMarker([pin[1],pin[0]],{radius:5,color:'#fff',weight:2,fillColor:t.kind&&t.kind!=='city'?'#e7be78':'#a5e7cb',fillOpacity:1}).addTo(map).bindTooltip(()=>{const label=document.createElement('span');label.textContent=t.name+' · '+kindLabel(t);return label},{direction:'top'});markers.push(m)});if(document.body.classList.contains('driving'))followCockpitPosition(lastPos||pointOnRoute(progress));else if(fitMain)map.fitBounds(routeLayer.getBounds(),{padding:[35,35]})}
+  if(!map)return;if(routeLayer)map.removeLayer(routeLayer);routeLayer=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#8538d1',weight:9,opacity:1}).addTo(map);markers.forEach(m=>map.removeLayer(m));markers=[];targets.filter(facilityVisible).forEach(t=>{const pin=t.routeCoord||t.coord;const m=L.circleMarker([pin[1],pin[0]],{radius:5,color:'#fff',weight:2,fillColor:t.kind&&t.kind!=='city'?'#e7be78':'#a5e7cb',fillOpacity:1}).addTo(map).bindTooltip(()=>{const label=document.createElement('span');label.textContent=t.name+' · '+kindLabel(t);return label},{direction:'top'});markers.push(m)});if(document.body.classList.contains('driving'))followCockpitPosition(lastPos||pointOnRoute(progress));else if(fitMain)map.fitBounds(routeLayer.getBounds(),{padding:[35,35]})}
 function drawPosition(c){$('main-map-center').disabled=false;if(document.body.classList.contains('driving'))followCockpitPosition(c);else followNavigationPosition(c,!coords.length);if(!map)return;if(positionLayer)positionLayer.setLatLng([c[1],c[0]]);else positionLayer=L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="gps-marker"></div>',iconSize:[18,18],iconAnchor:[9,9]})}).addTo(map)}
 function routeCityCandidates(list, destination, length, locate, via=null, viaAt=null, boundaries=new Map(), samples=[], routePoint=null, lookupRegion=null, roads=[]){
   const candidates=[];
@@ -326,6 +326,7 @@ function activateRoute(route,via,c,token) {
   $('hero-state').textContent='Live GPS';
   message('Route ready. Finding cities ahead…');
   discoverCities(token,revision);
+  window.rahyarPersistTrip?.(route,via);
 }
 const ONTARIO_HIGHWAYS={
   'on-11':{name:'Hwy 11 · North Bay to Nipigon',points:[[-79.44322,46.312769],[-79.748986,46.927422],[-80.330601,48.430449],[-82.998646,49.551972],[-88.320757,49.010646]]},

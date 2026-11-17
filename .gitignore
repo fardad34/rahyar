@@ -6,3 +6,13 @@ node_modules/
 .DS_Store
 Thumbs.db
 coverage/
+.vercel/
+.env.local
+supabase/.temp/
+node_modules/
+dist/vendor/rahyar-cloud.js
+dist/cloud-config.json
+playwright-report/
+test-results/
+dist/offline-manifest.json
+dist/vendor/leaflet/

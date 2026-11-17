@@ -113,6 +113,11 @@ function initMapPin() {
     $('results').replaceChildren();
     $('search-status').textContent = '';
   });
-  map?.on('click', event => selectMapPin(event.latlng));
-  navigationMap?.on('click', event => selectMapPin(event.lngLat));
+  const choosePin = event => {
+    if(watch!==null || document.body.classList.contains('driving'))return;
+    setMapPinPicking(true);
+    selectMapPin(event.lngLat || event.latlng);
+  };
+  map?.on('click', choosePin);
+  navigationMap?.on('click', choosePin);
 }

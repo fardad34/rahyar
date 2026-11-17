@@ -52,8 +52,9 @@ function readStationObservations() {
 }
 
 function currentStationObservation(station) {
-  if(station.reportByDirection && !stationMatchesRoute(station)) return null;
-  return readStationObservations().find(r=>r.key===stationIdentity(station));
+  if(typeof window==='undefined' || !window.RahyarCloud) return null;
+  const result=window.RahyarCloud.stationStatus(station,stationRouteBearing(station));
+  return result.latest ? {...result,time:Date.parse(result.latest.observed_at)} : null;
 }
 
 function stationThreshold(distance, stages) {
@@ -82,7 +83,7 @@ function updateStationWarning() {
   stages.add(stage);
   if (stage === 3) stages.add(20);
   const observation = currentStationObservation(station);
-  const status = observation ? 'Your last report: '+observation.status : 'Current status unknown';
+  const status = observation && observation.status!=='unknown' ? 'Drivers report '+observation.status+'; not official' : 'Current status unknown';
   const distance = usesMiles(currentCountry) ? (stage === 20 ? '12.4 miles' : '1.9 miles') : stage+' km';
   const message = stage === 20
     ? 'Inspection station ahead: '+station.name+'. Review its status. Report it when you can see the sign.'
@@ -91,12 +92,8 @@ function updateStationWarning() {
   notice.textContent = 'Within '+distance+' · '+message;
   clearTimeout(stationNoticeTimer);
   stationNoticeTimer = setTimeout(()=>{notice.textContent='';},20000);
-  // Inspection prompts use English while the existing voice toggle controls playback.
-  if (spokenAlerts && window.speechSynthesis && window.SpeechSynthesisUtterance) {
-    const utterance = new SpeechSynthesisUtterance(message);
-    utterance.lang = 'en-CA';
-    window.speechSynthesis.speak(utterance);
-  }
+  if(typeof speakNavigationText==='function')speakNavigationText(message);
+
 }
 
 function nextAlertStation() {
@@ -116,23 +113,20 @@ function createStationReportPanel(station) {
   const refresh = () => {
     const observation = currentStationObservation(station);
     panel.dataset.status = observation?.status || 'unknown';
-    title.textContent = observation ? 'Your last report: '+observation.status : 'Current status unknown';
-    detail.textContent = observation ? new Date(observation.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+' · This device' : 'Follow posted signs';
+    title.textContent = observation && observation.status!=='unknown' ? 'Drivers report: '+observation.status+' · Not official' : 'Current status Unknown';
+    detail.textContent = observation ? new Date(observation.time).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+' · '+observation.source+' · '+observation.count+' independent driver(s). Latest: '+observation.latest.status : 'No fresh, direction-matched corroboration. Follow posted signs';
     actions.hidden = !stationMatchesRoute(station) || isDemo || watch === null || activeRouteVehicle !== 'truck';
   };
-  buttons.forEach((button,index)=>button.onclick=()=>{
-    if (watch === null || guidanceOffRoute || station.at-progress > 20000 || station.at < progress ||
-        !gpsTime || Date.now()-gpsTime > 15000 || !stationMatchesRoute(station)) {
-      detail.textContent = 'Report this station when it is ahead within 20 km and GPS is ready.';
-      return;
-    }
+  buttons.forEach((button,index)=>button.onclick=async()=>{
+    button.disabled=true;
     try {
-      const key = stationIdentity(station);
-      const rows = readStationObservations().filter(r=>r.key!==key);
-      localStorage.setItem(stationReportKey,JSON.stringify([{key,status:index?'closed':'open',time:Date.now()},...rows]));
-      refresh();
-    } catch { detail.textContent = 'Could not save on this device.'; }
+      if(!stationMatchesRoute(station))throw Error('This station does not match your route direction.');
+      const result=await window.rahyarSubmitStation(station,index?'closed':'open');
+      detail.textContent=result.queued?'Observation queued offline; not shared yet.':'Observation shared. Waiting for independent corroboration.';
+    } catch(error){detail.textContent=error.message;}
+    finally{button.disabled=false;}
   });
+
   panel.refreshStatus = refresh;
   refresh();
   return panel;

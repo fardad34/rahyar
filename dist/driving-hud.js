@@ -63,7 +63,7 @@ function updateDrivingHud(){
   $('hud-upcoming').classList.toggle('change-near',!!active);$('hud-upcoming').classList.toggle('change-imminent',!!active&&context.distance<=100);
   $('hud-change-label').textContent=active?'SPEED LIMIT CHANGING':'NEXT MAPPED LIMIT';
   if(active){const stage=context.distance<=100?100:context.distance<=200?200:300,key=(isDemo?'demo':routeRevision)+':'+Math.round(next.start)+':'+next.limit+':'+stage;
-    if(!warnedChanges.has(key)){warnedChanges.add(key);if(!isDemo)announceSpeedStage(stage);flashSpeedWarning(stage===100?'danger':'warning','Speed limit changes to '+limitDisplay(next.limit)+' '+speedUnit()+' in '+nearDistance(context.distance));}
+    if(!warnedChanges.has(key)){warnedChanges.add(key);if(!isDemo){announceSpeedStage(stage);if(stage===300&&typeof speakNavigationText==='function')speakNavigationText(mappedSpeedAnnouncement(limitDisplay(next.limit),speedUnit(),nearDistance(context.distance)));}flashSpeedWarning(stage===100?'danger':'warning','Speed limit changes to '+limitDisplay(next.limit)+' '+speedUnit()+' in '+nearDistance(context.distance));}
   }
   $('hud-facility-status').textContent=isDemo?'Demo stops · Start a live trip for real locations.':facilityCatalogLoaded?'Bundled inventory loaded · '+integer(roadFacilities.filter(f=>f.at>=progress-150).length)+' stops ahead'+(facilityScanBusy?' · Checking online details…':facilityScanFailed?' · Extra online coverage unavailable':' · Coverage varies'):facilityScanBusy?'Loading stop inventory…':'Stop inventory not loaded · Use Refresh stops';
   for(const [key,kinds]of [['weigh',['weigh','inspection']],['truck',['truck','service']],['rest',['rest']],['diesel',['diesel']]]){
