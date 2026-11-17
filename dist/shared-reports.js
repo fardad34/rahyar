@@ -31,6 +31,7 @@ document.addEventListener('rahyar:reports',()=>{
 });
 window.rahyarSubmitStation = async (station,status) => {
  if(!window.RahyarCloud)throw Error('Shared reports are not connected.');
+ if(watch===null)throw Error('Start live GPS tracking before reporting a station so travel direction is current.');
  if(!lastPos || !gpsTime || Date.now()-gpsTime>15000 || !Number.isFinite(lastAccuracyMeters) || lastAccuracyMeters>100)throw Error('A fresh, accurate GPS fix is required.');
  if(hav(lastPos,station.coord)>1500)throw Error('Report only when you can observe this station within 1.5 km.');
  if(!Number.isFinite(gpsTravelHeading))throw Error('Travel direction is unavailable. Report when GPS direction is reliable.');
