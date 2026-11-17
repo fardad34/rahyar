@@ -12,7 +12,9 @@ Checked items have implementation and recorded evidence; partial work is stated 
 - [x] Two independent accounts verify stored reports, confidence/Unknown behavior and privacy controls.
 - [x] Two isolated Chromium sessions verify real Supabase WebSocket delivery and offline reconnection.
 - [x] Government-station registry preserves 212 existing records; source/direction/position filters; no invented Open/Closed state.
-- [ ] Wassi South: authoritative location/direction/status source remains unavailable; unrelated search results rejected.
+- [x] Confirm existing Wasi South/North against Ontario 511; fix Wassi search alias and dashboard station-key mismatch without duplicate data.
+- [x] Two real accounts in isolated browser sessions verify Wasi South Unknown → Open → conflict/Unknown → Closed via Supabase WebSockets.
+- [ ] Official live operating status is unavailable; physical Highway 11 route relevance still needs device validation.
 - [x] Vehicle cards, actual dimension-based routing, trailer presets, saved combinations and load-state metadata.
 - [ ] Additional illustrated tractor variants and complete dedicated cloud vehicle/trip workflows remain partial.
 - [x] Last 30 selected destinations, five quick favorites, existing saved places, direct Explore-map tap selection.
@@ -34,5 +36,6 @@ Checked items have implementation and recorded evidence; partial work is stated 
 - [x] Future native CarPlay path documented without a fake control.
 - [x] Add migrations and verify RLS/grants/publication/registry; runtime dependency audit clean.
 - [x] Responsive Chromium widths and offline browser tests; no physical Safari claim.
-- [ ] Protected Vercel preview pending GitHub connection and commercial-use eligibility under existing Hobby terms. No URL/deployment claimed.
+- [x] Investigate existing Vercel access and Hobby terms; prepare tested optional Netlify preview-only adapters and iPad authorization guide.
+- [ ] Accessible protected staging URL pending owner hosting authorization and deployed end-to-end verification. No URL/deployment claimed.
 - [ ] Production release requires explicit approval after remaining safety/device/access checks. No production deployment or paid activation.

@@ -9,5 +9,5 @@ module.exports = async (req,res) => {
     } catch {database='unavailable';}
   }
   if(database!=='reachable')console.warn(JSON.stringify({event:'rahyar_health_degraded',auth:database}));
-  res.status(database==='reachable'?200:503).json({service:'rahyar',status:database==='reachable'?'ok':'degraded',auth:database,commit:process.env.VERCEL_GIT_COMMIT_SHA||'local'});
+  res.status(database==='reachable'?200:503).json({service:'rahyar',status:database==='reachable'?'ok':'degraded',auth:database,commit:process.env.VERCEL_GIT_COMMIT_SHA||process.env.COMMIT_REF||'local'});
 };

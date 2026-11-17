@@ -5,12 +5,13 @@ const fs=require('fs'),assert=require('assert/strict');
  const proxy=proxyUrl?{server:new URL(proxyUrl).origin,bypass:'127.0.0.1,localhost'}:undefined;
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox'],proxy});
  const testLatitude=43.65+Math.random()*.1;
+ const baseURL=process.env.BASE_URL||'http://127.0.0.1:3000';
  const users=JSON.parse(fs.readFileSync(process.env.RAHYAR_TEST_USERS_FILE));const contexts=[],pages=[];const errors=[];
  try{
   for(let i=0;i<2;i++){
    const c=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:i?390:1024,height:i?844:768},geolocation:{latitude:testLatitude,longitude:-79.38},permissions:['geolocation']});contexts.push(c);
    const p=await c.newPage();pages.push(p);p.on('pageerror',e=>errors.push(e.message));
-   await p.goto((process.env.BASE_URL||'http://127.0.0.1:3000'),{waitUntil:'domcontentloaded',timeout:60000});
+   await p.goto(baseURL,{waitUntil:'domcontentloaded',timeout:60000});
    console.log('Loaded local page:',await p.title());await p.locator('#notice-agree').check();await p.locator('#notice-confirm').click();
    await p.waitForFunction(()=>window.RahyarCloud?.client(),{timeout:30000});
    await p.locator('#cloud-panel summary').click();await p.locator('#cloud-email').fill(users[i].email);await p.locator('#cloud-password').fill(users[i].password);await p.locator('#cloud-auth button[value=signin]').click();
@@ -39,7 +40,7 @@ const fs=require('fs'),assert=require('assert/strict');
   await b.waitForFunction(()=>window.integrationEvents.some(r=>r.category==='construction'),{timeout:20000});
   await first.waitForFunction(()=>window.RahyarCloud.queueLength===0,{timeout:10000});
   console.log('PASS offline queue persists and automatically shares with browser B after reconnection');
-  const health=await first.request.get('http://127.0.0.1:3000/api/health');assert.equal(health.status(),200);
+  const health=await first.request.get(new URL('/api/health',baseURL).href);assert.equal(health.status(),200);
   console.log('PASS application health endpoint');
   await first.locator('#report-close').click();
   await first.locator('details').filter({has:first.locator('#ask-form')}).locator('summary').click();

@@ -32,8 +32,8 @@ Existing Vercel project `rahyar` is configured as a static classic app with Node
 ## Known issues / pending work
 
 - Direct public truck routing rejects long requests with DistanceExceeded. Bounded segmentation now produced continuous Toronto–Winnipeg and Toronto–Vancouver Canada-only truck routes using the configured dimensions, with section-join and original-waypoint accounting tests. Global optimality, every alternative corridor and navigation on real roads remain unverified. North Bay needs live route/device validation despite the generic fork-wording improvement.
-- Wassi South authoritative inventory/direction/status unresolved. Latest driver observations are not official status; collusion/spoofed physical GPS remain possible. Moderation is basic, not a complete trust system.
-- Protected Vercel preview URL/Git linkage and deploy verification remain pending hosting eligibility. Main/public hosting unchanged.
+- Ontario 511 confirms existing Wasi South/North identities, direction and coordinates. Wassi spelling lookup and dashboard-derived station-key aliases are corrected without changing the 212 station registry. Official inventory has no live operating-status field. Latest driver observations are not official status; collusion/spoofed physical GPS remain possible. Moderation is basic, not a complete trust system.
+- No staging URL yet. Vercel Git namespace discovery is empty and Hobby commercial eligibility is not established. Optional Netlify preview adapters reuse the existing APIs, block main/production builds, and require owner authorization plus explicit Free/private settings. No new cloud project was created. See docs/STAGING_ACCESS.md. Main/public hosting unchanged.
 - Full interface localization, reliable six-language voices and audio/radio coexistence on actual iOS devices require manual testing.
 - LLM integration/usage controls remain pending a verified approved zero-cost provider. Current assistant is deliberately labeled data lookup.
 - Detailed offline maps, offline rerouting and verified truck-permitted roads require suitable engines/licensed sources. No official live road-alert ingestion credentials were available.

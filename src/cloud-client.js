@@ -97,7 +97,7 @@ $('cloud-auth').onsubmit=async event=>{
  event.preventDefault();if(!state.client){message('Backend unavailable. Try reloading after reconnecting.');return;}
  const email=$('cloud-email').value.trim(),password=$('cloud-password').value;
  const signup=event.submitter?.value==='signup';
- const result=signup?await state.client.auth.signUp({email,password}):await state.client.auth.signInWithPassword({email,password});
+ const result=signup?await state.client.auth.signUp({email,password,options:{emailRedirectTo:location.origin}}):await state.client.auth.signInWithPassword({email,password});
  $('cloud-password').value='';message(result.error?result.error.message:signup&&!result.data.session?'Check your email to confirm your account, then sign in.':'Signed in.');
 };
 $('cloud-signout').onclick=async()=>{

@@ -20,9 +20,20 @@ Live Canada-only checks with the loaded truck profile returned:
 This is a connected provider-routed corridor, not proof of truck legality or a globally optimal route. Source restrictions may be incomplete; fixed city split points can create a detour. Segmented responses currently expose one composite route. The 48-section-request budget and depth bound produce clear failure states rather than unbounded public-provider traffic. Per-section alternatives/global optimization and every highway preference still require additional live/device checks. HTTP rate limits or failures remain visible and do not erase the previous route.
 Existing Highway 11/17, Calgary-via and BC 1→17→91 options remain present. Fork guidance now retains the provider's left/right modifier even when the road reference is unchanged. This addresses a generic omitted-direction problem; it does not establish the correctness of the North Bay junction's live geometry. That junction still requires a real provider result and device navigation test.
 
-## Wassi South
+## Wasi South (also searched as Wassi)
 
-No Wassi South record exists in the supplied catalog. Named Photon lookup returned unrelated stations (including Windsor South), which were rejected as matches. Candidate Ontario 511 public endpoints were unavailable. No reliable coordinates, direction, or live Open/Closed feed were obtained. Do not substitute Windsor South or invent Wassi coordinates/status. Wassi South remains pending an authoritative MTO/Ontario 511 station record and operational status feed; Unknown is the only supportable live status until fresh matched driver observations or an official feed is available.
+Correction to the earlier inspection: **both stations already exist in the original dataset**. The initial absence finding searched only “Wassi” and was wrong. Ontario 511's public inventory was checked on 2026-11-17:
+
+| Official record | ID | Highway/direction | Longitude, latitude | Location |
+| --- | --- | --- | --- | --- |
+| Wasi South Truck Inspection Station | 20 | 11 / Southbound | -79.359774, 46.171362 | 1.0 km south of Rivers Rd West |
+| Wasi North Truck Inspection Station | 21 | 11 / Northbound | -79.35838799, 46.162617 | 1.7 km north of 8th Concession Rd |
+
+Sources: [Ontario 511 inventory](https://511on.ca/list/inspectionstations), [South tooltip](https://511on.ca/tooltip/InspectionStations/20?lang=en&noCss=true), [North tooltip](https://511on.ca/tooltip/InspectionStations/21?lang=en&noCss=true), and public map layer `https://511on.ca/map/mapIcons/InspectionStations`. Coordinates agree with the existing dataset; no station row or migration was added. The documented [inspection API](https://511on.ca/help/endpoint/inspectionstations) requires a developer key and is limited to 10 calls/60 seconds. Its published fields describe inventory, **not Open/Closed operation**. Inventory “last updated” is not a status timestamp.
+
+Two defects are fixed: local facility search accepts Wasi/Wassi and returns the existing station; dashboard facility projection adds OSM aliases that previously changed its serialized identity relative to the raw database registry. Canonical keys now ignore derived aliases when provider IDs exist, keeping all 212 original registry keys unchanged. A regression checks every registered station. A real two-browser test uses the projected Wasi South record and verifies cross-user Open/Closed/Unknown transitions and opposite-heading exclusion.
+
+Actual Highway 11 route-offset selection still needs road/device testing; synthetic GPS is not proof of access from the roadway. Live official operating status remains unavailable. Use Unknown unless fresh matched driver observations support an explicitly non-official driver status. Never substitute Windsor South or assume a government inventory entry means Open.
 
 ## Station observation semantics
 

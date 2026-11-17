@@ -2,7 +2,7 @@
 
 A truck and passenger vehicle navigation web application. The original static application, facility/geographic data, radio/media player, weather, border calculations and route options are preserved. This branch adds a Supabase-backed reporting/account layer and development tooling without a framework rewrite.
 
-**This is a review branch, not a production release.** See [progress](docs/IMPLEMENTATION_CHECKLIST.md), [handover](docs/RELEASE_HANDOVER.md), [architecture/context](PROJECT_CONTEXT.md), [recovery](docs/RECOVERY.md) and [external services](docs/EXTERNAL_SERVICES.md).
+**This is a review branch, not a production release.** See [staging access and iPad setup](docs/STAGING_ACCESS.md). See [progress](docs/IMPLEMENTATION_CHECKLIST.md), [handover](docs/RELEASE_HANDOVER.md), [architecture/context](PROJECT_CONTEXT.md), [recovery](docs/RECOVERY.md) and [external services](docs/EXTERNAL_SERVICES.md).
 
 ## Local development / Codex Projects
 
@@ -36,6 +36,7 @@ The existing Vercel project is `rahyar`, ID `prj_VWcZXiqXvf9CJLRqCsgr73fRqAlV`, 
 | `npm run verify` | Checks followed by all unit/regression tests |
 | `npm run test:integration` | Opt-in real Supabase authorization/report checks |
 | `npm run test:browser` | Opt-in two-browser realtime/offline queue checks |
+| `node tests/integration/weigh-status.browser.cjs` | Opt-in real two-account Wasi Open/Closed WebSocket checks |
 | `node tests/integration/planning.browser.cjs` | Responsive/planning/offline reload browser checks |
 
 The original invocation remains supported from the repository root:
@@ -44,11 +45,11 @@ The original invocation remains supported from the repository root:
 node --test tests/*.test.cjs
 ```
 
-The original baseline reported 25 results. This branch reports **39**, adding report confidence/direction/expiry, queue ownership, voice availability and data-assistant tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
+The original baseline reported 25 results. This branch reports **45**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
 
 Live tests require two dedicated test accounts and a credentials JSON file **outside the repository**, passed via `RAHYAR_TEST_USERS_FILE`. Do not use real driver accounts or commit credentials. Browser tests use system Chromium by default (`CHROMIUM_PATH` can override) and synthetic GPS/recorded fixtures. They do not prove physical Safari or actual speech audibility. Set `BASE_URL` for the browser's application URL. Network-restricted Node environments may require their platform's proxy configuration (this workspace uses `NODE_USE_ENV_PROXY=1`).
 
-Run `npm run verify` after modifications and repeat the affected live/browser tests. Unit tests do not call external providers. Live tests create real reports in the selected database: use a dedicated, authorized staging database and remove test users/records afterward.
+Run `npm run verify` after modifications and repeat the affected live/browser tests. Unit tests do not call external providers. Live tests create real reports in the selected database: use authorized synthetic accounts in the existing project, hide their shared reports afterward, and remove/revoke only those accounts when authorized. Do not create another cloud project.
 
 ## Architecture
 
@@ -90,7 +91,7 @@ Profiles and saved records use owner RLS. Account settings sync is explicit and 
 ## Limits and release restrictions
 
 - Direct long requests still exceed the public Valhalla limit. Bounded vehicle-aware segmentation now produced continuous Canada-only Toronto–Winnipeg and Toronto–Vancouver truck routes in live checks. Each section/join uses the vehicle router; no car geometry is substituted. Global optimality and every corridor alternative have not been verified.
-- Wassi South lacks an authoritative location/direction/status source. It has not been replaced with an unrelated station.
+- Ontario 511 confirms the existing Wasi South record (often searched as Wassi). Search now accepts either spelling and dashboard station identities match the central registry. The official inventory supplies no Open/Closed field; unverified operating status remains Unknown.
 - Ask Rahyar supports route-data questions and confirmed map controls, with optional browser speech input. **No language model is connected.** No paid AI provider or background wake-word service is enabled.
 - Offline preparation includes route geometry, instructions, truck profile and app assets. No offline basemap, satellite tiles or rerouting. Safari can evict data; Wi-Fi detection/persistent storage are not guaranteed.
 - Six-language notices/voice options/core controls are present; full interface translation and physical voice verification remain incomplete.

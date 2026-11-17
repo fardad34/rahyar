@@ -1,0 +1,38 @@
+# Optional zero-cost staging adapter. No Netlify project is created by this file.
+# Keep the credit-based Free plan and Private preview visibility. Never enable billing.
+[build]
+command = "node scripts/netlify-build.cjs"
+ignore = "node scripts/netlify-ignore.cjs"
+publish = "dist"
+functions = "netlify/functions"
+
+[build.environment]
+NODE_VERSION = "24"
+
+[functions]
+node_bundler = "esbuild"
+
+[[redirects]]
+from = "/api/config"
+to = "/.netlify/functions/config"
+status = 200
+force = true
+
+[[redirects]]
+from = "/api/health"
+to = "/.netlify/functions/health"
+status = 200
+force = true
+
+[[redirects]]
+from = "/api/ask"
+to = "/.netlify/functions/ask"
+status = 200
+force = true
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "camera=(), microphone=(self), geolocation=(self)"

@@ -7,7 +7,7 @@ function walk(dir) {
   return readdirSync(dir, {withFileTypes: true}).flatMap(entry => entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]);
 }
 let count = 0;
-for (const file of ['dist', 'scripts', 'tests', 'api', 'src'].flatMap(dir => walk(resolve(root, dir)))) {
+for (const file of ['dist', 'scripts', 'tests', 'api', 'src', 'netlify'].flatMap(dir => walk(resolve(root, dir)))) {
   if (/\.(js|cjs)$/.test(file)) {
     const result = spawnSync(process.execPath, ['--check', file], {stdio: 'inherit'});
     if (result.status !== 0) process.exit(result.status ?? 1);

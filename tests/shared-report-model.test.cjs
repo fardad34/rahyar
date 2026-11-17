@@ -24,3 +24,7 @@ test('route reports filter opposite direction, parallel roads and passed locatio
 test('Explore mode follows the viewed map rather than hiding distant viewed reports',()=>{
  assert.equal(m.relevantReport({latitude:50,longitude:-120},{explore:true,bounds:{south:49,north:51,west:-121,east:-119},position:[-79,44],distance:()=>3000000}),true);
 });
+test('route-projected aliases retain each registered government station key',()=>{
+ const fs=require('node:fs');const stations=JSON.parse(fs.readFileSync('dist/facility-catalog.json')).facilities.filter(s=>s.authority==='government');
+ for(const station of stations){const projected={...station,osmType:station.sourceType||'bts',osmId:station.sourceId,at:1000,off:50};assert.equal(m.stationKey(projected),m.stationKey(station),station.name);}
+});

@@ -1,7 +1,10 @@
 'use strict';
 const CATEGORIES = ['police','closed','construction','weigh'];
 function stationKey(station) {
-  return JSON.stringify([station.country || '',station.sourceType || '',station.sourceId || '',station.osmType || '',station.osmId || '',station.coord]);
+  // Route projection adds OSM aliases to provider records. They must not
+  // change the registry identity or hide observations saved for the raw station.
+  const providerType=station.sourceType || '',providerId=station.sourceId || '';
+  return JSON.stringify([station.country || '',providerType,providerId,providerType?'':station.osmType || '',providerId?'':station.osmId || '',station.coord]);
 }
 function headingMatches(a,b,tolerance=60) {
   // Missing heading cannot verify a directional observation.

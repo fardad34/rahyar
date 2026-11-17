@@ -27,12 +27,13 @@ Reports are visible only while fresh and moderation-visible; expired rows are re
 
 ## What is verified
 
-- **39 unit/regression results pass**, including every original test file. Existing fork-wording/night-brightness expectations were updated to the requested behavior; no fixture/test file was removed.
+- **45 unit/regression results pass**, including every original test file. Existing fork-wording/night-brightness expectations were updated to the requested behavior; no fixture/test file was removed.
 - All JavaScript syntax and JSON/manifest parsing pass.
 - Real Supabase checks: cross-account persistence/read, single observation Unknown, two matching drivers Open, conflicting latest evidence Unknown, retry deduplication, stale/far/forged submissions rejected, private settings isolation/impersonation denial and signed-out report denial.
 - Two isolated Chromium contexts: real account sign-in; session B receives session A's police report over a real Supabase WebSocket; exactly four categories; offline queue persists then delivers to B on reconnection; health endpoint; authenticated data assistant with confirmed map action and no LLM claim.
 - Chromium planning checks: vehicle cards/first truck settings, six themes/language choices, bounded history, no horizontal overflow at 390/768/1024/1440 px, app reload offline, persistent route/profile/instructions and non-live preview.
 - Public live truck routing: Toronto–Winnipeg 2,174.299 km / 4 routed sections, Toronto–Vancouver 4,829.611 km / 14 sections. Canada-only checks passed. All sections use the loaded truck dimensions; internal waypoint/step accounting is tested.
+- Current retest: two isolated signed-in Chromium sessions used projected Wasi South identity; real Supabase WebSockets delivered one-driver Unknown, two-driver Open, conflict Unknown and two-driver Closed, with timestamps/source and opposite-heading exclusion. Synthetic reports were hidden afterward; visible synthetic count is zero. Physical iOS remains untested.
 - Runtime npm audit: no reported vulnerabilities at the recorded check.
 
 Tests use emulated GPS, original recorded route fixtures, synthetic test identities and Chromium. They do **not** prove physical iPad/iPhone Safari behavior, speech audibility, real-world road legality, every corridor alternative, full email-delivery signup, or live government operating status. Public routing is not an official legality guarantee or global route optimum.
@@ -41,7 +42,7 @@ Tests use emulated GPS, original recorded route fixtures, synthetic test identit
 
 Existing project `rahyar` / `prj_VWcZXiqXvf9CJLRqCsgr73fRqAlV` / team `team_PuUJOIzmcLUiNoqlGAdgDzLR` is configured for Node 24, framework Other, repository root, `npm ci`, `npm run build`, output `dist` and yul1 APIs. Existing Vercel Authentication protection remains enabled. Development/preview variables are scoped appropriately; no production variables were provisioned. No deployment or custom-domain assignment has occurred.
 
-**Staging URL: unavailable — deployment not performed.**
+**Staging URL: unavailable — deployment not performed.** See [STAGING_ACCESS.md](STAGING_ACCESS.md) for exact investigation evidence, current Free hosting alternatives and iPad owner steps. Optional Netlify adapters reuse all three existing API handlers and block main/production builds; local adapter/build checks pass, but deployed bundling/protection has not been verified.
 
 Two prerequisites remain:
 
@@ -52,7 +53,7 @@ Two prerequisites remain:
 
 ## Remaining work and limits
 
-- Wassi South needs authoritative coordinates/direction/status; unrelated Photon results were rejected. No invented record/status was added.
+- Wasi South/North are confirmed existing Ontario 511 records; spelling lookup and dashboard key mismatch are fixed. Official inventory has no operational status. Physical route relevance and official live status remain unverified.
 - Long-distance segmentation is working in the tested corridors, but global optimization, all alternatives, North Bay live maneuvers and road/device navigation need more verification.
 - AI inference is not connected. Ask Rahyar is explicitly deterministic data lookup; physical speech recognition, hands-free wake word and verified zero-cost LLM entitlement remain pending. No paid AI activation.
 - Offline maps are route/app data only: no detailed basemap tiles, satellite imagery or offline rerouting. Wi-Fi detection/storage persistence cannot be guaranteed in Safari; eviction remains possible.
@@ -64,7 +65,7 @@ Two prerequisites remain:
 
 ## Costs and access control
 
-Selected configuration is **$0 in newly activated subscriptions/services**: existing Supabase Free, existing Vercel Hobby (not deployed), public routing/weather/geocoding, optional existing user-supplied TomTom key, local browser storage and zero LLM usage. Free quotas can pause/rate-limit services; this is not an uptime guarantee. Vercel commercial eligibility is unresolved, so a free production-hosting cost cannot be promised. No payment details, upgrade, paid branching, premium password protection, paid model, domain or extra project was activated.
+Selected configuration is **$0 in newly activated subscriptions/services**: existing Supabase Free, existing Vercel Hobby (not deployed), public routing/weather/geocoding, optional existing user-supplied TomTom key, local browser storage and zero LLM usage. Free quotas can pause/rate-limit services; this is not an uptime guarantee. Vercel commercial eligibility is unresolved. Netlify credit-based Free advertises a $0 hard-limit plan permitting commercial projects, with owner-only Private previews; owner authorization and actual deployment remain pending. This is a staging alternative, not a production cost promise. No payment details, upgrade, paid branching, premium password protection, paid model, domain or extra project was activated.
 
 Only publishable Supabase credentials reach the browser. Privileged keys are absent. Owner RLS protects private settings/profiles; shared reports are intentionally readable by signed-in accounts, with UI/server query geographic filters rather than per-driver geofenced authorization. User IDs act as pseudonymous report source identifiers; emails/profile data are not shared with reports. Client writes cannot set source/expiry/moderation. Sessions are handled by the official SDK and checked server-side for assistant access. Offline caches exclude APIs/tokens/external tiles. Logs use sanitized error categories and do not record submitted questions or tokens.
 
