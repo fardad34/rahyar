@@ -50,8 +50,8 @@ function showRoadMapMarkers(points) {
 }
 
 async function refreshRoadMapMarkers() {
-  const visibleMap = $('map').hidden ? navigationMap : map;
-  if (!visibleMap || visibleMap.getZoom() < 14) {
+  const visibleMap=navigationReady&&!navigationFailed?navigationMap:map;
+  if (!visibleMap || visibleMap.getZoom() < (watch!==null?11:14)) {
     if (activeRoadMarkerCell) showRoadMapMarkers([]);updateKilometreMarker([]);
     activeRoadMarkerCell = '';
     return;
@@ -69,23 +69,23 @@ async function refreshRoadMapMarkers() {
     const box = [y-grid/2,x-grid/2,y+grid*1.5,x+grid*1.5].map(n=>n.toFixed(5)).join(',');
     const query = '[out:json][timeout:10];(node["highway"~"^(traffic_signals|speed_camera|motorway_junction|milestone)$"]('+box+');' +
       'rel["type"="enforcement"]["enforcement"~"^(maxspeed|traffic_signals)$"]('+box+'););' +
-      'out body;node(r:"device");out body;' + 'way["highway"~"^(primary|secondary|tertiary|residential|unclassified)$"]('+box+');out geom;' ;
+      'out body;node(r:"device");out body;' + 'way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified|motorway_link|trunk_link|primary_link)$"]('+box+');out geom;' ;
     const lookup = url => getJSON(url,{method:'POST',body:new URLSearchParams({data:query})},13000);
     roadMarkerCache.set(cell,lookup('https://overpass-api.de/api/interpreter')
       .catch(()=>lookup('https://overpass.private.coffee/api/interpreter'))
-      .then(result=>{const elements=result.elements||[];return {points:[...mappedRoadPoints(elements),...mappedJunctions(elements)],milestones:mappedMilestones(elements)};}).catch(()=>{
+      .then(result=>{if(result.remark||!Array.isArray(result.elements))throw Error('Road inventory incomplete');const elements=result.elements||[];return {points:[...mappedRoadPoints(elements),...mappedJunctions(elements)],milestones:mappedMilestones(elements)};}).catch(()=>{
         setTimeout(()=>{
           roadMarkerCache.delete(cell);
           if (activeRoadMarkerCell === cell) activeRoadMarkerCell = '';
         },45000);
-        return {points:[],milestones:[]};
+        return {points:[],milestones:[],unavailable:true};
       }));
   }
   const data = await roadMarkerCache.get(cell);
   const points=data.points;
   if (activeRoadMarkerCell !== cell) return;
   const closest = points.sort((a,b)=>Math.hypot(a.lat-lat,a.lon-lng)-Math.hypot(b.lat-lat,b.lon-lng)).slice(0,60);
-  showRoadMapMarkers(closest);updateKilometreMarker(data.milestones);
+  showRoadMapMarkers(closest);updateKilometreMarker(data.milestones);const status=document.getElementById('nav-road-data-status');if(status)status.textContent=data.unavailable?'Road data service is unavailable. Signals/cameras/milestones cannot be confirmed; retrying later.':'OpenStreetMap: '+closest.length+' mapped road symbols and '+data.milestones.length+' milestone records nearby. Missing records do not mean no cameras or restrictions exist.';
 }
 
 function scheduleRoadMapMarkers() {
@@ -122,5 +122,5 @@ function mappedMilestones(elements){
 function updateKilometreMarker(points){
  let badge=document.getElementById('nav-km-marker');if(!badge){badge=document.createElement('div');badge.id='nav-km-marker';badge.className='nav-km-marker';badge.hidden=true;document.getElementById('nav-shell')?.append(badge);}
  const current=lastPos&&points.map(p=>({...p,d:typeof hav==='function'?hav(lastPos,p.coord):Infinity})).filter(p=>p.d<=100).sort((a,b)=>a.d-b.d)[0];
- badge.hidden=!current;if(current){badge.textContent=current.label;badge.title=current.source+' · nearby mapped marker, not trip distance';}
+ badge.hidden=!lastPos||watch===null;if(!current){badge.textContent='km —';badge.title='Road kilometre is unavailable: no nearby mapped milestone with a distance. Not trip distance.';}if(current){badge.textContent=current.label;badge.title=current.source+' · nearby mapped marker, not trip distance';}
 }

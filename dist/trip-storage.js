@@ -1,7 +1,14 @@
 'use strict';
 (() => {
  const panel=document.createElement('details');panel.className='panel cloud-panel';panel.innerHTML='<summary>Saved route &amp; offline preparation</summary><p>Standard online maps remain the default. Basic preparation saves the route line, instructions and your configured truck dimensions. It does not download map tiles, satellite imagery or support offline rerouting. Detailed offline maps are unavailable until a licensed source is configured.</p><label><input type="checkbox" id="offline-wifi" checked> Prefer Wi-Fi (browser network detection is not available on every Safari version)</label><p id="offline-size"></p><button id="prepare-offline" type="button" class="secondary">Prepare Basic offline route</button><button id="review-saved-route" type="button" class="secondary">Review saved route</button><button id="delete-offline" type="button" class="secondary">Delete saved route &amp; offline app data</button><p id="offline-status" role="status"></p><canvas id="offline-route-canvas" width="720" height="400" aria-label="Saved route line; no offline basemap"></canvas><p id="offline-next" role="status"></p><ol id="offline-directions"></ol>';$('cloud-panel').after(panel);
- let snapshot=null,gpsWatch=null,previewAttempted=false;
+ let snapshot=null,gpsWatch=null,previewAttempted=false;const fallbackKey='rahyar.routeFallback.v1';
+ function mirror(value){
+  // Keep the full route line/profile/instructions; avoid duplicating every step's shape/intersection graph.
+  const compact={...value,route:{...value.route,legs:(value.route.legs||[]).map(leg=>({...leg,steps:(leg.steps||[]).map(step=>{const {geometry,intersections,...guidance}=step;return guidance;})}))}};
+  try{const text=JSON.stringify(compact);if(text.length>2200000)throw Error('Route exceeds backup capacity');localStorage.setItem(fallbackKey,text);}
+  catch{try{localStorage.removeItem(fallbackKey);}catch{}$('offline-status').textContent='Persistent route backup is unavailable. Keep this tab open; Safari storage may be full or restricted.';}
+ }
+ function readMirror(){try{return JSON.parse(localStorage.getItem(fallbackKey)||'null');}catch{return null;}}
  const db=new Promise((resolve,reject)=>{const request=indexedDB.open('rahyar.trips.v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('trips');request.onsuccess=()=>resolve(request.result);request.onerror=request.onblocked=()=>reject(Error('Trip storage unavailable'));});
  async function transaction(mode,operation){const d=await db;return new Promise((resolve,reject)=>{const t=d.transaction('trips',mode);const request=operation(t.objectStore('trips'));let value;request.onsuccess=()=>{value=request.result;};t.oncomplete=()=>resolve(value);t.onerror=t.onabort=()=>reject(Error('Could not save route on this device'));});}
  function draw(position){
@@ -22,11 +29,11 @@
   draw();
   if(navigator.storage?.estimate){const storage=await navigator.storage.estimate();$('offline-size').textContent+=' Browser storage used: '+((storage.usage||0)/1024/1024).toFixed(1)+' MB. Safari may evict data.';}
  }
- window.rahyarCheckpointTrip=async()=>{if(snapshot){snapshot={...snapshot,progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};await transaction('readwrite',s=>s.put(snapshot,'last'));}};
+ window.rahyarCheckpointTrip=async()=>{if(snapshot){snapshot={...snapshot,updatedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};mirror(snapshot);await transaction('readwrite',s=>s.put(snapshot,'last'));}};
  window.rahyarPersistTrip=async(route,via)=>{
   previewAttempted=true;
   const value={version:1,route,maneuvers:routeManeuvers,via,viaValue:$('route-via').value,destination:dest,vehicle:activeRouteVehicle,profile:activeTruckProfile,origin:route.geometry.coordinates[0],savedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};
-  try{await transaction('readwrite',s=>s.put(value,'last'));snapshot=value;render();}catch(error){$('offline-status').textContent=error.message;}
+  snapshot=value;mirror(value);try{await transaction('readwrite',s=>s.put(value,'last'));render();}catch(error){$('offline-status').textContent=error.message;}
  };
  $('review-saved-route').onclick=()=>{
   if(!snapshot){$('offline-status').textContent='No saved route is available.';return;}
@@ -64,14 +71,16 @@
  };
  $('delete-offline').onclick=async()=>{
   if(!confirm('Delete this saved route and offline app cache? Media and other saved places will be preserved.'))return;
-  await transaction('readwrite',s=>s.delete('last'));snapshot=null;
+  try{localStorage.removeItem(fallbackKey);}catch{}await transaction('readwrite',s=>s.delete('last'));snapshot=null;
   for(const name of await caches.keys())if(name.startsWith('rahyar-offline-'))await caches.delete(name);
   if(gpsWatch!==null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}render();$('offline-status').textContent='Saved route and offline app cache deleted.';
  };
  function restorePreview(){
   if(!snapshot||document.body.classList.contains('notice-required')||previewAttempted)return;
   previewAttempted=true;
-  if(watch!==null||coords.length||!dest||hav(dest.coord,snapshot.destination.coord)>5)return;
+  if(watch!==null||coords.length)return;
+  if(!dest)setSearchedDestination(snapshot.destination,false);
+  if(hav(dest.coord,snapshot.destination.coord)>5)return;
   try{
    activeRouteVehicle=snapshot.vehicle;
    prepare(snapshot.route.geometry.coordinates,snapshot.route.distance);
@@ -88,5 +97,5 @@
   }catch{$('offline-status').textContent='Saved route preview could not be restored. Start a fresh trip.';}
  }
  new MutationObserver(()=>{if(!document.body.classList.contains('notice-required'))queueMicrotask(restorePreview);}).observe(document.body,{attributes:true,attributeFilter:['class']});
- db.then(()=>transaction('readonly',s=>s.get('last'))).then(value=>{if(value?.version===1&&value.route?.geometry?.coordinates?.length>1&&value.destination?.coord){snapshot=value;render();restorePreview();}}).catch(()=>{$('offline-status').textContent='Saved trip storage is unavailable in this browser.';});
+ Promise.race([db.then(()=>transaction('readonly',s=>s.get('last'))).catch(()=>null),new Promise(resolve=>setTimeout(()=>resolve(null),1800))]).then(value=>{const fallback=readMirror();return !value||(fallback?.updatedAt||fallback?.savedAt||0)>(value.updatedAt||value.savedAt||0)?fallback:value;}).then(value=>{if(value?.version===1&&value.route?.geometry?.coordinates?.length>1&&value.destination?.coord){snapshot=value;render();restorePreview();}}).catch(()=>{$('offline-status').textContent='Saved trip storage is unavailable in this browser.';});
 })();

@@ -35,7 +35,7 @@
     const playing = starting || !audio.paused;
     const action = playing ? 'Pause' : 'Play';
     quickToggle.disabled = !selectedMedia;
-    quickToggle.firstElementChild.textContent = playing ? 'Ⅱ' : '▶';
+    quickToggle.firstElementChild.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor">'+(playing?'<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>':'<path d="m7 3 15 9-15 9z"/>')+'</svg>';
     byId('dashboard-media-action').textContent = action;
     quickToggle.setAttribute('aria-label', selectedMedia ? action + ' ' + selectedMedia.entry.name : 'Play');
     for (const button of document.querySelectorAll('[data-media-id]')) {

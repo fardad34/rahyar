@@ -3,8 +3,8 @@
 (() => {
  const intentKey='rahyar.activeTripIntent',upgradeKey='rahyar.upgradeResume';
  let intent=false,refreshing=false;
- try{intent=sessionStorage.getItem(intentKey)==='active';}catch{}
- window.rahyarSetTripIntent=active=>{intent=active;try{sessionStorage.setItem(intentKey,active?'active':'inactive');}catch{}};
+ try{const durable=localStorage.getItem(intentKey);intent=durable?durable==='active':sessionStorage.getItem(intentKey)==='active';}catch{try{intent=sessionStorage.getItem(intentKey)==='active';}catch{}}
+ window.rahyarSetTripIntent=active=>{intent=active;try{sessionStorage.setItem(intentKey,active?'active':'inactive');}catch{}try{localStorage.setItem(intentKey,active?'active':'inactive');}catch{}};
  function attachLiveWatch(){
   if(!intent||!dest||coords.length<2||isDemo||!navigator.geolocation)return;
   if(watch!==null)navigator.geolocation.clearWatch(watch);
@@ -15,9 +15,10 @@
  }
  document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){window.rahyarCheckpointTrip?.().catch(()=>{});return;}
-  if(intent&&watch!==null)attachLiveWatch();
+  if(intent&&coords.length>1)attachLiveWatch();
   navigationMap?.resize();map?.invalidateSize({pan:false});
  });
+ setInterval(()=>{if(intent&&coords.length>1)window.rahyarCheckpointTrip?.().catch(()=>{});},15000);
  window.addEventListener('pagehide',()=>window.rahyarCheckpointTrip?.().catch(()=>{}));
  window.addEventListener('pageshow',event=>{if(event.persisted&&intent)attachLiveWatch();});
  window.rahyarRestoreUpgradeSession=()=>{
