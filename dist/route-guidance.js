@@ -95,6 +95,7 @@ function updateRouteGuidance() {
   let symbol = '';
   let currentRoad = '';
   if (isDemo) instruction = 'Demo map · Start a live trip for turn guidance';
+  else if(watch===null&&coords.length&&document.body.classList.contains('navigation-redesign')) instruction='Saved route · Start to resume GPS guidance';
   else if (watch !== null) {
     if (!$('retry-route').hidden) instruction = 'Route unavailable · Retry route';
     else if (!gpsTime || !lastPos || Date.now() - gpsTime > 25000) instruction = 'Waiting for a fresh GPS fix';

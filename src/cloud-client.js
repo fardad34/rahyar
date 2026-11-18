@@ -64,7 +64,7 @@ function relevantRows(){
  const c=window.rahyarReportContext?.()||{};
  return currentReports().filter(r=>relevantReport(r,c));
 }
-function reportLabel(r){return ({police:'🚓 Police',closed:'⛔ Road Closed',construction:'🚧 Construction',weigh:'⚖ Weigh Station'})[r.category];}
+function reportLabel(r){return ({police:'Police',closed:'Road Closed',construction:'Construction',weigh:'Weigh Station'})[r.category];}
 function renderReports(){
  const box=$('shared-report-list');if(!box)return;
  box.replaceChildren();

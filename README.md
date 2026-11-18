@@ -2,7 +2,7 @@
 
 A truck and passenger vehicle navigation web application. The original static application, facility/geographic data, radio/media player, weather, border calculations and route options are preserved. This branch adds a Supabase-backed reporting/account layer and development tooling without a framework rewrite.
 
-**This is a review branch, not a production release.** See [staging access and iPad setup](docs/STAGING_ACCESS.md). See [progress](docs/IMPLEMENTATION_CHECKLIST.md), [handover](docs/RELEASE_HANDOVER.md), [architecture/context](PROJECT_CONTEXT.md), [recovery](docs/RECOVERY.md) and [external services](docs/EXTERNAL_SERVICES.md).
+**This is a review branch, not a production release.** The map-first navigation redesign is documented in [NAVIGATION_REDESIGN.md](docs/NAVIGATION_REDESIGN.md). See [staging access and iPad setup](docs/STAGING_ACCESS.md). See [progress](docs/IMPLEMENTATION_CHECKLIST.md), [handover](docs/RELEASE_HANDOVER.md), [architecture/context](PROJECT_CONTEXT.md), [recovery](docs/RECOVERY.md) and [external services](docs/EXTERNAL_SERVICES.md).
 
 ## Local development / Codex Projects
 
@@ -33,6 +33,7 @@ The existing Vercel project is `rahyar`, ID `prj_VWcZXiqXvf9CJLRqCsgr73fRqAlV`, 
 | `npm run build` | Bundle only the new reporting client; copy Leaflet; create offline manifest |
 | `npm test` | Run all unit/regression test files, including the original 14 files |
 | `npm run check` | JavaScript syntax and JSON/manifest parsing |
+| `npm run test:ui` | Opt-in map-first navigation, bottom-sheet and mobile browser regression checks |
 | `npm run verify` | Checks followed by all unit/regression tests |
 | `npm run test:integration` | Opt-in real Supabase authorization/report checks |
 | `npm run test:browser` | Opt-in two-browser realtime/offline queue checks |
@@ -45,7 +46,7 @@ The original invocation remains supported from the repository root:
 node --test tests/*.test.cjs
 ```
 
-The original baseline reported 25 results. This branch reports **45**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
+The original baseline reported 25 results. This branch reports **48**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
 
 Live tests require two dedicated test accounts and a credentials JSON file **outside the repository**, passed via `RAHYAR_TEST_USERS_FILE`. Do not use real driver accounts or commit credentials. Browser tests use system Chromium by default (`CHROMIUM_PATH` can override) and synthetic GPS/recorded fixtures. They do not prove physical Safari or actual speech audibility. Set `BASE_URL` for the browser's application URL. Network-restricted Node environments may require their platform's proxy configuration (this workspace uses `NODE_USE_ENV_PROXY=1`).
 

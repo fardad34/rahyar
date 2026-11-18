@@ -18,7 +18,8 @@
     "prestart": "npm run build",
     "test:integration": "node --env-file-if-exists=.env.local tests/integration/reports.live.cjs",
     "test:browser": "node tests/integration/reports.browser.cjs",
-    "test:roadtest": "node tests/integration/roadtest.browser.cjs"
+    "test:roadtest": "node tests/integration/roadtest.browser.cjs",
+    "test:ui": "node tests/integration/navigation-ui.browser.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0",

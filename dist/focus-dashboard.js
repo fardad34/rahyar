@@ -98,7 +98,7 @@ function followCockpitPosition(c,resetZoom=false){
   followNavigationPosition(c,resetZoom);
   if(map&&cockpitMapFollow&&!$('map').hidden){
     const expanded=document.body.classList.contains('map-expanded');
-    const drop=Math.min(expanded?38:76,map.getSize().y*.19);
+    const drop=document.body.classList.contains('navigation-redesign')?(map.getSize().y-(parseFloat(document.documentElement.style.getPropertyValue('--nav-sheet-height'))||112))*.65-map.getSize().y/2:Math.min(expanded?38:76,map.getSize().y*.19);
     const autoZoom=typeof followingZoom==='function'?followingZoom():null;
     const zoom=autoZoom===null ? (resetZoom?17:map.getZoom()) : Math.round(autoZoom);
     const scale=map.getZoomScale(zoom);
@@ -115,6 +115,9 @@ function updateCockpitMapState(){
   $('focus-follow').title=cockpitMapFollow?'Following GPS':'Return to your vehicle';
 }
 function startCockpitLayout(){
+  if(document.body.classList.contains('navigation-redesign')){
+    document.body.classList.add('driving');cockpitMapFollow=true;focusRowsKey='';refreshFocusSummary(true);updateDrivingHud();updateRouteGuidance();setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress),true);},120);return;
+  }
   const region=document.querySelector('.region-panel'),mapPanel=document.querySelector('.map-panel');
   if(!regionHome){regionHome=document.createComment('region home');region.before(regionHome)}
   $('focus-region-footer').append(region);
@@ -125,6 +128,7 @@ function startCockpitLayout(){
   setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress),true)},100);
 }
 function stopCockpitLayout(){
+  if(document.body.classList.contains('navigation-redesign')){document.body.classList.remove('driving','map-expanded');resizeCockpitMap();return;}
   setFocusMapExpanded(false);
   $('dashboard-media').open=false;
   layoutFocusMapOverlays(false);
@@ -151,6 +155,7 @@ async function exitFocusFullscreen(){
 }
 function resizeCockpitMap(){setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress))},100);$('focus-fullscreen').textContent=fullscreenElement()?'Windowed view':'Full screen'}
 function layoutFocusMapOverlays(active) {
+  if(document.body.classList.contains('navigation-redesign'))return;
   const area = $('focus-map-area');
   const controls = area.querySelector('.focus-map-controls');
   const heading = area.querySelector('.map-heading');

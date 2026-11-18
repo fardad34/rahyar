@@ -50,7 +50,7 @@ function followNavigationPosition(coord,reset=false){
   const mapHeight=navigationMap.getContainer().clientHeight;
   const focusDrop=focused?Math.min(document.body.classList.contains('map-expanded')?38:76,mapHeight*.19):0;
   const autoZoom=typeof followingZoom==='function'?followingZoom():null;
-  const camera={center:coord,bearing:focused?navigationBearing():0,pitch:navigationPitch?60:0,...(autoZoom!==null?{zoom:autoZoom}:reset?{zoom:focused?16.5:14}:{}),padding:focused?{top:Math.round(mapHeight*.4+focusDrop*2)+16,bottom:16,left:0,right:0}:{top:0,bottom:0,left:0,right:0}};
+  const camera={center:coord,bearing:focused?navigationBearing():0,pitch:navigationPitch?60:0,...(autoZoom!==null?{zoom:autoZoom}:reset?{zoom:focused?16.5:14}:{}),padding:focused?(document.body.classList.contains('navigation-redesign')?{top:Math.round(Math.max(120,mapHeight-(parseFloat(document.documentElement.style.getPropertyValue('--nav-sheet-height'))||112))*.3),bottom:Math.min(mapHeight-120,parseFloat(document.documentElement.style.getPropertyValue('--nav-sheet-height'))||112),left:0,right:0}:{top:Math.round(mapHeight*.4+focusDrop*2)+16,bottom:16,left:0,right:0}):{top:0,bottom:0,left:0,right:0}};
   if(reset)navigationMap.jumpTo(camera);
   else navigationMap.easeTo({...camera,duration:350,easing:t=>t});
 }

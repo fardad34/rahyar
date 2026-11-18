@@ -10,7 +10,7 @@ window.rahyarReportContext = () => {
 };
 let sharedReportLeaflet=null;
 window.rahyarRenderReportMarkers = rows => {
- const features={type:'FeatureCollection',features:rows.map(r=>({type:'Feature',geometry:{type:'Point',coordinates:[r.longitude,r.latitude]},properties:{id:r.id,label:r.category==='weigh'?'⚖':r.category==='police'?'🚓':r.category==='closed'?'⛔':'🚧'}}))};
+ const features={type:'FeatureCollection',features:rows.map(r=>({type:'Feature',geometry:{type:'Point',coordinates:[r.longitude,r.latitude]},properties:{id:r.id,label:r.category==='weigh'?'W':r.category==='police'?'P':r.category==='closed'?'×':'!'}}))};
  if(navigationReady && navigationMap){
   if(!navigationMap.getSource('driver-reports')){
    navigationMap.addSource('driver-reports',{type:'geojson',data:features});

@@ -60,7 +60,7 @@ function updateDrivingHud(){
   if(speedError&&!speedLoadBusy&&!current?.limit)$('hud-limit-source').textContent=speedError;
   $('hud-next-limit').textContent=next?limitDisplay(next.limit):'—';$('hud-change-distance').textContent=next?nearDistance(context.distance)+' ahead':'No change ahead';
   const active=next&&context.distance>0&&context.distance<=300;
-  $('hud-upcoming').classList.toggle('change-near',!!active);$('hud-upcoming').classList.toggle('change-imminent',!!active&&context.distance<=100);
+  $('hud-upcoming').hidden=!active;$('hud-upcoming').classList.toggle('change-near',!!active);$('hud-upcoming').classList.toggle('change-imminent',!!active&&context.distance<=100);
   $('hud-change-label').textContent=active?'SPEED LIMIT CHANGING':'NEXT MAPPED LIMIT';
   if(active){const stage=context.distance<=100?100:context.distance<=200?200:300,key=(isDemo?'demo':routeRevision)+':'+Math.round(next.start)+':'+next.limit+':'+stage;
     if(!warnedChanges.has(key)){warnedChanges.add(key);if(!isDemo){announceSpeedStage(stage);if(stage===300&&typeof speakNavigationText==='function')speakNavigationText(mappedSpeedAnnouncement(limitDisplay(next.limit),speedUnit(),nearDistance(context.distance)));}flashSpeedWarning(stage===100?'danger':'warning','Speed limit changes to '+limitDisplay(next.limit)+' '+speedUnit()+' in '+nearDistance(context.distance));}

@@ -7,11 +7,11 @@
  function renderHistory(){
   const box=$('destination-history');if(!box)return;box.replaceChildren();
   const favorites=read(favoritesKey),history=read(historyKey);
-  for(const [heading,places] of [['★ Favorites',favorites],['◷ Recent destinations',history]]){
+  for(const [heading,places] of [['Favorites',favorites],['Recent destinations',history]]){
    const title=document.createElement('strong');title.textContent=heading;box.append(title);
    for(const place of places){const row=document.createElement('div'),use=document.createElement('button'),fav=document.createElement('button');
     use.type=fav.type='button';use.className=fav.className='secondary';use.textContent=place.addressLabel||place.name;use.onclick=()=>{if(watch!==null&&!confirm('Change the destination and recalculate your active route?'))return;setSearchedDestination(place,false);};
-    const chosen=favorites.some(f=>same(f,place));fav.textContent=chosen?'★':'☆';fav.setAttribute('aria-label',chosen?'Remove favorite':'Add favorite');fav.onclick=()=>{if(!chosen&&favorites.length>=5){message('Five quick favorites are already saved. Remove one before adding another.',true);return;}write(favoritesKey,chosen?favorites.filter(f=>!same(f,place)):[place,...favorites]);renderHistory();};
+    const chosen=favorites.some(f=>same(f,place));fav.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="'+(chosen?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 3 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>';fav.setAttribute('aria-label',chosen?'Remove favorite':'Add favorite');fav.onclick=()=>{if(!chosen&&favorites.length>=5){message('Five quick favorites are already saved. Remove one before adding another.',true);return;}write(favoritesKey,chosen?favorites.filter(f=>!same(f,place)):[place,...favorites]);renderHistory();};
     row.append(use,fav);box.append(row);
    }
   }
@@ -26,7 +26,7 @@
   }
   const updateCards=()=>{for(const b of cards.children){b.setAttribute('aria-pressed',String(b.dataset.vehicle===picker.value));b.disabled=picker.disabled;}};
   picker.after(cards);picker.hidden=true;picker.addEventListener('change',updateCards);new MutationObserver(updateCards).observe(picker,{attributes:true,attributeFilter:['disabled']});updateCards();
-  const history=document.createElement('details');history.className='destination-history';history.innerHTML='<summary>★ Favorites &amp; ◷ last 30 destinations</summary><div id="destination-history"></div><button id="clear-destination-history" type="button" class="secondary">Clear history</button>';$('results').after(history);$('clear-destination-history').onclick=()=>{write(historyKey,[]);renderHistory();};renderHistory();
+  const history=document.createElement('details');history.className='destination-history';history.innerHTML='<summary>Favorites &amp; last 30 destinations</summary><div id="destination-history"></div><button id="clear-destination-history" type="button" class="secondary">Clear history</button>';$('results').after(history);$('clear-destination-history').onclick=()=>{write(historyKey,[]);renderHistory();};renderHistory();
   const original=selectDestination;
   selectDestination=function(city,...args){if(city){const items=read(historyKey).filter(c=>!same(c,city));write(historyKey,[city,...items].slice(0,30));renderHistory();}return original(city,...args);};
   // A deliberate tap in Explore chooses coordinates. Active navigation is unaffected.
