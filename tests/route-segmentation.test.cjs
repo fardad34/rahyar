@@ -11,3 +11,10 @@ test('segment budget and disconnected joins fail explicitly rather than drawing 
 });
 test('long sections split before hitting the public provider limit and preserve the vehicle router',async()=>{const c=ctx();let calls=0;const result=await c.requestSegmentedVehicleRoute([[0,0],[4,0]],async([a,b])=>{calls++;assert(Math.abs(b[0]-a[0])<=3);return [route(a,b)];},{maxSectionMeters:300000});assert.equal(calls,2);assert.equal(result.segmentCount,2);assert.equal(result.legs.length,1);});
 test('a timed-out long section is split into shorter routed legs instead of aborting the journey',async()=>{const c=ctx();let calls=0;const r=await c.requestSegmentedVehicleRoute([[0,0],[4,0]],async([a,b])=>{calls++;if(b[0]-a[0]>3)throw Object.assign(Error('timeout'),{name:'TimeoutError'});return [route(a,b)];},{maxSectionMeters:Infinity});assert.equal(calls,3);assert.equal(r.segmentCount,2);});
+test('artificial split-city excursion is removed only by a shorter real vehicle route',async()=>{
+ const c=ctx();const step=(a,b,d)=>({distance:d,duration:d/20,maneuver:{type:'turn'},geometry:{coordinates:[a,b]}});
+ const a={distance:200000,duration:10000,legs:[{steps:[step([0,0],[1,0],50000),step([1,0],[1,1],150000)]}],geometry:{coordinates:[[0,0],[1,0],[1,1]]}};
+ const b={distance:200000,duration:10000,legs:[{steps:[step([1,1],[2,0],150000),step([2,0],[3,0],50000)]}],geometry:{coordinates:[[1,1],[2,0],[3,0]]}};
+ const result=await c.bypassArtificialStops([a,b],async([x,y])=>[{distance:100000,duration:5000,legs:[{steps:[step(x,y,100000)]}],geometry:{coordinates:[x,y]}}]);assert.equal(result.length,1);assert.equal(result[0].distance,200000);assert(!result[0].geometry.coordinates.some(p=>p[1]===1));
+ const retained=await c.bypassArtificialStops([a,b],async()=>{throw Error('provider down')});assert.equal(retained.length,2);
+});

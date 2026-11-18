@@ -140,6 +140,7 @@ async function requestRoadRoutes(points, alternatives = 2, timeout, heading, can
       if (domesticHighway.length) return domesticHighway;
     }
   }
+  if(typeof requestSegmentedVehicleRoute==='function')return segmentedVehicleRoutes(points,timeout,heading,true);
   throw Object.assign(new Error('No Canada-only route found'), {code: 'CanadaOnlyRouteUnavailable'});
 }
 
@@ -165,7 +166,6 @@ async function vehicleRoutingRequest(request,timeout){
 
 async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canadaOnly = false, through = false, segmenting = false} = {}) {
   const vehicle = activeRouteVehicle;
-  if(!segmenting&&typeof requestSegmentedVehicleRoute==='function'&&typeof hav==='function'&&points.some((point,index)=>index>0&&hav(points[index-1],point)>400000))return segmentedVehicleRoutes(points,timeout,heading,canadaOnly);
   if (vehicle === 'truck' && !activeTruckProfile) throw new Error('Truck profile is required');
   const costingOptions = vehicle === 'truck' ? {
     ...activeTruckProfile,

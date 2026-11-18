@@ -6,7 +6,7 @@
  const same=(a,b)=>a?.coord?.join(',')===b?.coord?.join(',');
  function renderHistory(){
   const box=$('destination-history');if(!box)return;box.replaceChildren();
-  const favorites=read(favoritesKey),history=read(historyKey);
+  const favorites=read(favoritesKey),history=read(historyKey);if(!history.length){const empty=document.createElement('p');empty.textContent='Selected destinations are saved here on this device (up to 30).';box.append(empty);}
   for(const [heading,places] of [['Favorites',favorites],['Recent destinations',history]]){
    const title=document.createElement('strong');title.textContent=heading;box.append(title);
    for(const place of places){const row=document.createElement('div'),use=document.createElement('button'),fav=document.createElement('button');
@@ -26,9 +26,10 @@
   }
   const updateCards=()=>{for(const b of cards.children){b.setAttribute('aria-pressed',String(b.dataset.vehicle===picker.value));b.disabled=picker.disabled;}};
   picker.after(cards);picker.hidden=true;picker.addEventListener('change',updateCards);new MutationObserver(updateCards).observe(picker,{attributes:true,attributeFilter:['disabled']});updateCards();
-  const history=document.createElement('details');history.className='destination-history';history.innerHTML='<summary>Favorites &amp; last 30 destinations</summary><div id="destination-history"></div><button id="clear-destination-history" type="button" class="secondary">Clear history</button>';$('results').after(history);$('clear-destination-history').onclick=()=>{write(historyKey,[]);renderHistory();};renderHistory();
+  const history=document.createElement('details');history.className='destination-history';history.innerHTML='<summary>Favorites &amp; last 30 destinations</summary><div id="destination-history"></div><button id="clear-destination-history" type="button" class="secondary">Clear history</button>';$('results').after(history);$('clear-destination-history').onclick=()=>{write(historyKey,[]);historyRevision++;try{historyDB?.transaction('places','readwrite').objectStore('places').delete('recent');}catch{}renderHistory();};renderHistory();
+  let historyRevision=0;let historyDB;try{const req=indexedDB.open('rahyar.destinations.v1',1);req.onupgradeneeded=()=>req.result.createObjectStore('places');req.onsuccess=()=>{historyDB=req.result;const revision=historyRevision;const load=historyDB.transaction('places').objectStore('places').get('recent');load.onsuccess=()=>{if(revision===historyRevision&&!read(historyKey).length&&Array.isArray(load.result)){write(historyKey,load.result.slice(0,30));renderHistory();}};};}catch{}
   const original=selectDestination;
-  selectDestination=function(city,...args){if(city){const items=read(historyKey).filter(c=>!same(c,city));write(historyKey,[city,...items].slice(0,30));renderHistory();}return original(city,...args);};
+  selectDestination=function(city,...args){if(city?.coord?.length===2&&city.coord.every(Number.isFinite)){const items=read(historyKey).filter(c=>!same(c,city));const next=[city,...items].slice(0,30);historyRevision++;write(historyKey,next);try{historyDB?.transaction('places','readwrite').objectStore('places').put(next,'recent');}catch{}renderHistory();}return original(city,...args);};
   // A deliberate tap in Explore chooses coordinates. Active navigation is unaffected.
   $('pick-map-pin').hidden=true;
   const menu=document.createElement('details');menu.className='map-settings-menu';menu.innerHTML='<summary aria-label="Map settings">☰</summary><div class="map-settings-content"></div>';

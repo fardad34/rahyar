@@ -2,7 +2,8 @@
 // Keep the vehicle in the lower visible map, outside the actual planner/watchlist bounds.
 function navigationCameraFrame(width,height,{sheet=null,search=null}={}){
  const docked=width>=700&&sheet&&sheet.width<=width*.65;
- let x=docked?Math.max(width*.25,Math.min(width*.42,sheet.x*.68)):width*.5;
+ const leftDocked=docked&&sheet.x<width*.2;
+ let x=docked?(leftDocked?Math.min(width*.78,Math.max(width*.68,sheet.x+sheet.width+(width-sheet.x-sheet.width)*.5)):Math.max(width*.25,Math.min(width*.42,sheet.x*.68))):width*.5;
  let available=docked?height:Math.max(160,height-(sheet?.height||112));
  let y=docked?available*.8:Math.min(available*.8,available-65);
  if(search&&search.width>0){x=Math.min(width*.7,Math.max(width*.55,search.x+search.width+width*.12));y=height*.72;}

@@ -46,7 +46,7 @@ The original invocation remains supported from the repository root:
 node --test tests/*.test.cjs
 ```
 
-The original baseline reported 25 results. This branch reports **56**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
+The original baseline reported 25 results. This branch reports **66**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
 
 Live tests require two dedicated test accounts and a credentials JSON file **outside the repository**, passed via `RAHYAR_TEST_USERS_FILE`. Do not use real driver accounts or commit credentials. Browser tests use system Chromium by default (`CHROMIUM_PATH` can override) and synthetic GPS/recorded fixtures. They do not prove physical Safari or actual speech audibility. Set `BASE_URL` for the browser's application URL. Network-restricted Node environments may require their platform's proxy configuration (this workspace uses `NODE_USE_ENV_PROXY=1`).
 
@@ -100,3 +100,5 @@ Profiles and saved records use owner RLS. Account settings sync is explicit and 
 - Production/main and the existing public website remain unchanged. Auto Git deployments are disabled in `vercel.json`. Vercel Hobby's [terms](https://vercel.com/legal/terms) restrict it to personal/non-commercial use; a commercial staging release needs eligibility clarification or a separately approved hosting arrangement. No upgrade is authorized.
 
 No application redistribution license was supplied. Preserve the existing vendor/data attribution; Leaflet Rotate includes GPL-3.0 terms. Review licensing separately before commercial redistribution.
+
+Latest road-test corrections and current limitations: [18 November feedback update](docs/ROADTEST_FEEDBACK_20261118.md). On the existing preview, use **More controls → به‌روزرسانی برنامه · Update app** to refresh while preserving local trip/settings and an existing valid session. Hosting login protection is independent.

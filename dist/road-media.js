@@ -10,7 +10,7 @@
     ['Iran International', 'https://radio.iraninternational.app/iintl_c'],
     ['Radio Farda', 'https://stream.radiojar.com/cp13r2cpn3quv'],
     ['Radio Javan TV audio', 'https://rjtvhls.wns.live/hls/stream.m3u8'],
-    ['کلاب‌هاوس · نبرد اندیشه‌ها', 'https://clubhouse-mini.tail4a3417.ts.net/hls/master.m3u8'],
+    ['کلاب نبرد اندیشه‌ها', 'https://clubhouse-mini.tail4a3417.ts.net/hls/master.m3u8'],
     ['CHUM 104.5', 'https://playerservices.streamtheworld.com/api/livestream-redirect/CHUMFMAAC_SC'],
     ['Z100 New York', 'https://stream.revma.ihrhls.com/zc1469/hls.m3u8'],
     ['KIIS FM Los Angeles', 'https://stream.revma.ihrhls.com/zc185/hls.m3u8'],

@@ -48,7 +48,7 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
     steps.push(...(route.legs||[]).flatMap(l=>l.steps||[]));
   }
   for(let i=1;i<points.length;i++){
-    const parts=await split(points[i-1],points[i]);const steps=[];const beforeDistance=totalDistance,beforeDuration=totalDuration;
+    let parts=await split(points[i-1],points[i]);parts=await bypassArtificialStops(parts,request);const steps=[];const beforeDistance=totalDistance,beforeDuration=totalDuration;
     for(const part of parts)await append(part,steps);
     // Intermediate split arrivals/departures are not destinations. Keep only
     // the first departure and last arrival for each originally requested leg.
@@ -56,4 +56,36 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
     originalLegs.push({distance:totalDistance-beforeDistance,duration:totalDuration-beforeDuration,steps:steps.map((step,index)=>((step.maneuver?.type==='arrive'&&index!==lastArrival)||(step.maneuver?.type==='depart'&&index!==0))?{...step,maneuver:{...step.maneuver,type:'notification'}}:step)});
   }
   return {distance:totalDistance,duration:totalDuration,geometry:{type:'LineString',coordinates:geometry},legs:originalLegs,segmented:true,segmentCount:pieces.length};
+}
+
+// Remove city-center excursions introduced solely by distance-limit split points.
+// Only a shorter, connected route returned with the same vehicle profile can replace them.
+async function bypassArtificialStops(parts,request){
+ const stepsOf=route=>(route.legs||[]).flatMap(l=>l.steps||[]).filter(s=>s.distance>0);
+ const fromSteps=steps=>{
+  if(!steps.length)return null;
+  const coordinates=[];for(const step of steps){const line=step.geometry?.coordinates;if(!line?.length)return null;for(const p of line){if(!coordinates.length||hav(coordinates.at(-1),p)>.01)coordinates.push(p);}}
+  return {distance:steps.reduce((v,s)=>v+s.distance,0),duration:steps.reduce((v,s)=>v+s.duration,0),geometry:{type:'LineString',coordinates},legs:[{steps}]};
+ };
+ const result=[...parts];
+ for(let i=0;i<result.length-1;i++){
+  const left=stepsOf(result[i]),right=stepsOf(result[i+1]);
+  if(!left.length||!right.length||[...left,...right].some(s=>!s.geometry?.coordinates?.length))continue;
+  let cutL=left.length,cutR=0,dL=0,dR=0;
+  while(cutL>0&&dL<130000)dL+=left[--cutL].distance;
+  while(cutR<right.length&&dR<130000)dR+=right[cutR++].distance;
+  const a=left[cutL].geometry.coordinates[0],b=right[cutR-1].geometry.coordinates.at(-1);
+  if(hav(a,b)>400000)continue;
+  try{
+   const bridge=(await request([a,b]))[0];
+   if(!bridge||bridge.distance>=dL+dR-1000||hav(a,bridge.geometry.coordinates[0])>2||hav(b,bridge.geometry.coordinates.at(-1))>2)continue;
+   const prefix=fromSteps(left.slice(0,cutL)),suffix=fromSteps(right.slice(cutR));
+   // Merge steps/geometry without routing through the arbitrary split city again.
+   const mergedSteps=[...(prefix?stepsOf(prefix):[]),...stepsOf(bridge),...(suffix?stepsOf(suffix):[])].map((step,index)=>index>0&&step.maneuver?.type==='depart'?{...step,maneuver:{...step.maneuver,type:'notification'}}:step);
+   const lastArrival=(result[i+1].legs||[]).flatMap(l=>l.steps||[]).findLast(s=>s.maneuver?.type==='arrive');if(lastArrival)mergedSteps.push(lastArrival);
+   const merged=fromSteps(mergedSteps);
+   if(merged){result.splice(i,2,merged);i--;}
+  }catch(error){if(error.code==='SegmentBudgetExceeded'||error.name==='AbortError')throw error;/* Keep connected vehicle-routed sections if refinement is unavailable. */}
+ }
+ return result;
 }

@@ -22,9 +22,10 @@
   draw();
   if(navigator.storage?.estimate){const storage=await navigator.storage.estimate();$('offline-size').textContent+=' Browser storage used: '+((storage.usage||0)/1024/1024).toFixed(1)+' MB. Safari may evict data.';}
  }
+ window.rahyarCheckpointTrip=async()=>{if(snapshot){snapshot={...snapshot,progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};await transaction('readwrite',s=>s.put(snapshot,'last'));}};
  window.rahyarPersistTrip=async(route,via)=>{
   previewAttempted=true;
-  const value={version:1,route,maneuvers:routeManeuvers,via,viaValue:$('route-via').value,destination:dest,vehicle:activeRouteVehicle,profile:activeTruckProfile,origin:route.geometry.coordinates[0],savedAt:Date.now()};
+  const value={version:1,route,maneuvers:routeManeuvers,via,viaValue:$('route-via').value,destination:dest,vehicle:activeRouteVehicle,profile:activeTruckProfile,origin:route.geometry.coordinates[0],savedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};
   try{await transaction('readwrite',s=>s.put(value,'last'));snapshot=value;render();}catch(error){$('offline-status').textContent=error.message;}
  };
  $('review-saved-route').onclick=()=>{
@@ -75,14 +76,15 @@
    activeRouteVehicle=snapshot.vehicle;
    prepare(snapshot.route.geometry.coordinates,snapshot.route.distance);
    buildTravelProfile(snapshot.route);routeManeuvers=buildRouteManeuvers(snapshot.route);
-   progress=0;tripDeparture={place:{coord:snapshot.origin},time:new Date()};
+   progress=Math.max(0,Math.min(routeLength,snapshot.progress||0));tripDeparture={place:{coord:snapshot.origin},time:new Date()};activeTruckProfile=snapshot.profile;
    pendingVia=snapshot.via||null;
    if([...$('route-via').options].some(o=>o.value===snapshot.viaValue)){$('route-via').value=snapshot.viaValue;updateViaLabel();}
-   displayRouteChoices([snapshot.route],0);setTargets(known);drawRoute();
+   displayRouteChoices([snapshot.route],0);setTargets(snapshot.cities?.length?snapshot.cities:known);drawRoute();
    $('route-type').textContent='Saved route preview · Revalidate before driving';
    $('map-status').textContent='Saved origin → '+snapshot.destination.name+' · GPS tracking is off';
    $('start').textContent='Start & revalidate saved route';
    message('Your selected route was restored for review. Start a trip online to revalidate the current vehicle and restrictions.');
+   window.rahyarRestoreUpgradeSession?.();
   }catch{$('offline-status').textContent='Saved route preview could not be restored. Start a fresh trip.';}
  }
  new MutationObserver(()=>{if(!document.body.classList.contains('notice-required'))queueMicrotask(restorePreview);}).observe(document.body,{attributes:true,attributeFilter:['class']});
