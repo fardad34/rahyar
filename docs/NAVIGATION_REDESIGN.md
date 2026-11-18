@@ -45,3 +45,31 @@ Use a new PR Deploy Preview on existing Netlify site `eclectic-arithmetic-148297
 The account was previously forcing Netlify login on all contexts. Public preview visibility must be configured independently of production by the account owner; the current connection has no supported visibility-control tool. A protected 401 is not public acceptance. Completion requires an unauthenticated HTTPS 200 containing Rahyar and its UI assets rather than a login page. Do not change production visibility or create duplicate projects to work around this.
 
 Pre-redesign source backup: `/workspace/work/backups/ui-redesign-20261118T130316Z/before-redesign.bundle`, independently cloned and fsck verified, contains original baseline and latest pre-redesign development. Recover source into a separate checkout; retain database records and existing production. Roll back a test deploy by redeploying reviewed `43b7dad` as a preview only. The Git backup is not a backup of external database/account settings or device-local media.
+
+## Road-test corrections — 2026-11-18
+
+Backup before edits: `/workspace/work/backups/roadtest-fixes-20261118T153741Z/before-fixes.bundle`, independently restored and checked. Production/main and Supabase data are unchanged.
+
+Long legs are proactively divided into bounded geographic sections (400 km straight-line threshold) using existing country/continent-aware catalog waypoints. Provider limits and transient section failures can recover through further subdivision, within request/depth bounds. Sections use the actual selected vehicle dimensions/costing and are joined into continuous geometry/guidance. This can introduce detours and does not certify legal truck access or optimal routing. No individual highway itinerary is hardcoded as a replacement routing engine.
+
+Browser routing now posts to `/api/route` (Netlify Function adapter), a fixed Valhalla upstream with bounded body/waypoints, validated truck dimensions and timeout. It stores no GPS and uses no privileged keys. Legacy static hosting falls back to direct requests only when the endpoint is absent. Public routing remains best-effort/fair-use; a commercially licensed provider is still required for dependable production capacity.
+
+Controls now follow the reference's left/right arrangement. Actual GPS speed is in the upper badge, mapped current limit below, with an approaching yellow sign only under the existing reliable-data/300 m rules. Unknown limits remain unknown. Original shaded SVG car and semi-trailer graphics provide a 3D-style presentation. GPS camera framing places the vehicle lower, outside the right-docked watchlist. Landscape tablet watchlist occupies half the width at lower right; portrait retains the bottom sheet. Rows/text are larger and a right-hand collapse control is available. This layout interprets the requested half-screen/right positioning; the reference's photographic satellite scene is not simulated.
+
+Executed live browser truck routes from Hearst: Winnipeg ~1,359 km/3 section requests; Vancouver ~3,841 km/17 requests, continuous Canada-only geometry and no browser errors. GPS was emulated, not physical iPad GPS. `npm run verify` passes 56 tests, including gateway validation, camera framing, proactive segmentation and timeout recovery.
+
+Reproduce the opt-in long-route checks with `BASE_URL=http://127.0.0.1:3041 node tests/integration/long-route.browser.cjs` after starting the local server on that port. These calls use the real upstream and should not be repeatedly load-tested.
+
+Current correction checklist:
+- [x] Recoverable pre-change Git backup.
+- [x] Same-origin routing gateway and bounded long-trip segmentation.
+- [x] Live long-distance truck checks (Hearst–Winnipeg/Vancouver).
+- [x] Speed hierarchy, original dimensional vehicle SVGs, lower GPS framing.
+- [x] Left/right control arrangement and right-docked tablet watchlist.
+- [x] Unit/syntax/build checks (56 unit tests).
+- [ ] Physical iPad/iPhone Safari, voice audibility and real-road GPS verification.
+- [ ] Public unauthenticated preview access (Netlify account still returns 401).
+
+Eight individual real route checks (car/truck × Canada/US/UK/Germany), weather availability, signed-out report protection and selected-route retention after network failure were observed in the road-test run. The browser process was stopped after these recorded cases to release resources; this is not claimed as a completed full-suite run. No two-user backend report test was rerun during this frontend correction.
+
+The final truck UI browser run completed successfully at 1180×820, 390×844 and 844×390, including speed hierarchy, lower camera framing, sheet gestures, menus, route restoration and zero page errors. Updated screenshots are in `docs/screenshots`. The screenshot GPS sample can become stale during lengthy tests, correctly displaying a fresh-fix warning rather than live guidance.

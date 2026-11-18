@@ -2,8 +2,10 @@
 // Public-provider distance limits are handled without substituting car geometry.
 // Candidate split points come from the existing city catalog; every traversed
 // section, including any snapped join, must be returned by the vehicle router.
-async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=false,maxRequests=48,onProgress=()=>{}}={}) {
-  const catalog=(await loadCatalog()).filter(c=>['CA','US'].includes(c.country)&&(!canadaOnly||c.country==='CA'));
+async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=false,maxRequests=48,maxSectionMeters=400000,onProgress=()=>{}}={}) {
+  const originCountry=typeof regionAt==='function'?regionAt(points[0])?.country:null;
+  const northAmerica=originCountry?['CA','US'].includes(originCountry):null;
+  const catalog=(await loadCatalog()).filter(c=>(!canadaOnly||c.country==='CA')&&(northAmerica===null||['CA','US'].includes(c.country)===northAmerica));
   let requests=0;const memo=new Map();
   const request=async pair=>{
     const key=JSON.stringify(pair);if(memo.has(key))return memo.get(key);
@@ -21,13 +23,14 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
     return choices;
   }
   async function split(a,b,depth=0){
-    try{const routes=await request([a,b]);if(routes.length)return [routes[0]];throw Object.assign(new Error('No vehicle route for a section'),{code:'SegmentNoRoute'});}
+    try{if(hav(a,b)>maxSectionMeters&&depth<9&&candidates(a,b).length)throw Object.assign(new Error('Split long section before requesting it'),{code:'DistanceExceeded'});const routes=await request([a,b]);if(routes.length)return [routes[0]];throw Object.assign(new Error('No vehicle route for a section'),{code:'SegmentNoRoute'});}
     catch(error){
-      if(!['DistanceExceeded','SegmentNoRoute','CanadaOnlyRouteUnavailable'].includes(error.code)&&error.errorCode!==154)throw error;
+      const recoverable=['DistanceExceeded','NoRoute','SegmentNoRoute','CanadaOnlyRouteUnavailable'].includes(error.code)||error.errorCode===154||((error.name==='TimeoutError'||error.name==='TypeError'||error.status>=500)&&hav(a,b)>150000);
+      if(!recoverable)throw error;
       if(depth>=9)throw error;
       for(const middle of candidates(a,b)){
         try{return [...await split(a,middle,depth+1),...await split(middle,b,depth+1)];}
-        catch(next){if(!['DistanceExceeded','SegmentNoRoute','CanadaOnlyRouteUnavailable','DisconnectedSegments'].includes(next.code)&&next.errorCode!==154)throw next;}
+        catch(next){if(!['DistanceExceeded','NoRoute','SegmentNoRoute','CanadaOnlyRouteUnavailable','DisconnectedSegments'].includes(next.code)&&next.errorCode!==154)throw next;}
       }
       throw Object.assign(new Error('No connected vehicle-aware corridor was found within the service limit'),{code:'SegmentNoRoute'});
     }
@@ -41,7 +44,7 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
       if(!connector||hav(geometry.at(-1),connector.geometry.coordinates[0])>.5||hav(connector.geometry.coordinates.at(-1),line[0])>.5)throw Object.assign(new Error('Provider sections do not join on the same road'),{code:'DisconnectedSegments'});
       await append(connector,steps);
     }
-    geometry.push(...(geometry.length?line.slice(1):line));totalDistance+=route.distance;totalDuration+=route.duration;pieces.push(route);
+    for(let i=geometry.length?1:0;i<line.length;i++)geometry.push(line[i]);totalDistance+=route.distance;totalDuration+=route.duration;pieces.push(route);
     steps.push(...(route.legs||[]).flatMap(l=>l.steps||[]));
   }
   for(let i=1;i<points.length;i++){

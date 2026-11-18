@@ -143,8 +143,29 @@ async function requestRoadRoutes(points, alternatives = 2, timeout, heading, can
   throw Object.assign(new Error('No Canada-only route found'), {code: 'CanadaOnlyRouteUnavailable'});
 }
 
+async function segmentedVehicleRoutes(points,timeout,heading,canadaOnly){
+  const capturedSession=typeof session==='number'?session:null;
+  const route=await requestSegmentedVehicleRoute(points,async pair=>{
+    if(capturedSession!==null&&capturedSession!==session)throw Object.assign(new Error('Trip changed'),{name:'AbortError'});
+    const routes=await fetchVehicleRoutes(pair,0,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true});
+    return canadaOnly?routes.filter(r=>!routeEntersUnitedStates(r)):routes;
+  },{canadaOnly,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
+  return [route];
+}
+async function vehicleRoutingRequest(request,timeout){
+  // Same-origin gateway avoids client CORS/preflight and URL-size dependencies.
+  // Retain the direct provider for static legacy hosting without Functions.
+  if(typeof window!=='undefined'&&typeof document!=='undefined'){
+    try{return await getJSON('/api/route',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)},timeout??32000);}
+    catch(error){if(![404,405].includes(error.status))throw error;}
+  }
+  const url='https://valhalla1.openstreetmap.de/route?json='+encodeURIComponent(JSON.stringify(request));
+  return getJSON(url,{headers:{'X-Client-Id':location.hostname}},timeout);
+}
+
 async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canadaOnly = false, through = false, segmenting = false} = {}) {
   const vehicle = activeRouteVehicle;
+  if(!segmenting&&typeof requestSegmentedVehicleRoute==='function'&&typeof hav==='function'&&points.some((point,index)=>index>0&&hav(points[index-1],point)>400000))return segmentedVehicleRoutes(points,timeout,heading,canadaOnly);
   if (vehicle === 'truck' && !activeTruckProfile) throw new Error('Truck profile is required');
   const costingOptions = vehicle === 'truck' ? {
     ...activeTruckProfile,
@@ -167,19 +188,11 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
     request.locations[0].heading = Math.round(heading) % 360;
     request.locations[0].heading_tolerance = 45;
   }
-  const url = 'https://valhalla1.openstreetmap.de/route?json=' + encodeURIComponent(JSON.stringify(request));
   let result;
-  try { result = await getJSON(url, {headers: {'X-Client-Id': location.hostname}}, timeout); }
+  try { result = await vehicleRoutingRequest(request,timeout); }
   catch(error) {
-    if(!segmenting && (error.code==='DistanceExceeded'||error.errorCode===154) && typeof requestSegmentedVehicleRoute==='function'){
-      const capturedSession=typeof session==='number'?session:null;
-      const route=await requestSegmentedVehicleRoute(points,async pair=>{
-        if(capturedSession!==null&&capturedSession!==session)throw Object.assign(new Error('Trip changed'),{name:'AbortError'});
-        const routes=await fetchVehicleRoutes(pair,0,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true});
-        return canadaOnly?routes.filter(r=>!routeEntersUnitedStates(r)):routes;
-      },{canadaOnly,onProgress:count=>{if(typeof message==='function')message('Checking '+vehicleLabel(vehicle)+' route section '+count+'… Previous route stays visible.');}});
-      return [route];
-    }
+    const canSplit=typeof requestSegmentedVehicleRoute==='function'&&typeof hav==='function';
+    if(!segmenting&&canSplit&&(error.code==='DistanceExceeded'||error.errorCode===154||((error.name==='TimeoutError'||error.name==='TypeError'||error.status>=500)&&points.some((p,i)=>i>0&&hav(points[i-1],p)>150000))))return segmentedVehicleRoutes(points,timeout,heading,canadaOnly);
     throw error;
   }
   if (result.code !== 'Ok') return [];

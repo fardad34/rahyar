@@ -1,0 +1,4 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');const c={};vm.createContext(c);vm.runInContext(fs.readFileSync('dist/navigation-camera.js','utf8'),c);
+test('vehicle remains low and left of a right-docked iPad watchlist',()=>{const frame=c.navigationCameraFrame(1280,889,{sheet:{x:532,width:640,height:444}});assert(frame.y>889*.7);assert(frame.x<532);assert(Math.abs((889+frame.padding.top-frame.padding.bottom)/2-frame.y)<1);});
+test('phone vehicle remains in lower available map above the expanded sheet',()=>{const frame=c.navigationCameraFrame(390,844,{sheet:{x:0,width:390,height:422}});assert(frame.y>422*.7);assert(frame.y+65<422);});
+test('explore GPS stays outside an open destination planner',()=>{const frame=c.navigationCameraFrame(1280,889,{sheet:{x:532,width:640,height:112},search:{x:24,width:380,height:600}});assert(frame.x>404);assert(frame.y>889*.65);});

@@ -8,7 +8,7 @@ const port = Number(process.env.PORT || 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be an integer from 1 to 65535');
 const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png'};
 const server = http.createServer(async (req, res) => {
-  if (req.url.split('?')[0] === '/api/config' || req.url.split('?')[0] === '/api/health' || req.url.split('?')[0] === '/api/ask') {
+  if (req.url.split('?')[0] === '/api/config' || req.url.split('?')[0] === '/api/health' || req.url.split('?')[0] === '/api/ask' || req.url.split('?')[0] === '/api/route') {
     res.status = code => { res.statusCode=code; return res; };
     res.json = data => { res.setHeader('Content-Type','application/json'); res.end(JSON.stringify(data)); };
     const endpoint=req.url.split('?')[0].slice(5);

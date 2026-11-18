@@ -98,12 +98,13 @@ function followCockpitPosition(c,resetZoom=false){
   followNavigationPosition(c,resetZoom);
   if(map&&cockpitMapFollow&&!$('map').hidden){
     const expanded=document.body.classList.contains('map-expanded');
-    const drop=document.body.classList.contains('navigation-redesign')?(map.getSize().y-(parseFloat(document.documentElement.style.getPropertyValue('--nav-sheet-height'))||112))*.65-map.getSize().y/2:Math.min(expanded?38:76,map.getSize().y*.19);
+    const frame=document.body.classList.contains('navigation-redesign')&&typeof rahyarCameraFrame==='function'?rahyarCameraFrame(map.getSize().x,map.getSize().y):null;
+    const drop=frame?frame.y-map.getSize().y/2:Math.min(expanded?38:76,map.getSize().y*.19);
     const autoZoom=typeof followingZoom==='function'?followingZoom():null;
     const zoom=autoZoom===null ? (resetZoom?17:map.getZoom()) : Math.round(autoZoom);
     const scale=map.getZoomScale(zoom);
     const position=map.latLngToContainerPoint([c[1],c[0]]);
-    const center=map.containerPointToLatLng(position.subtract([0,drop/scale]));
+    const center=map.containerPointToLatLng(position.subtract([frame?(frame.x-map.getSize().x/2)/scale:0,drop/scale]));
     if(resetZoom||zoom!==map.getZoom())map.setView(center,zoom,{animate:false});
     else map.panTo(center,{animate:true,duration:.35});
   }
