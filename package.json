@@ -1,0 +1,32 @@
+{
+  "name": "rahyar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Truck and passenger vehicle navigation web application",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env.local scripts/serve.cjs",
+    "start": "node --env-file-if-exists=.env.local scripts/serve.cjs",
+    "test": "node scripts/test.cjs",
+    "test:watch": "node scripts/test.cjs --watch",
+    "check": "node scripts/check.cjs",
+    "verify": "npm run check && npm test",
+    "build": "node scripts/build.cjs",
+    "predev": "npm run build",
+    "prestart": "npm run build",
+    "test:integration": "node --env-file-if-exists=.env.local tests/integration/reports.live.cjs",
+    "test:browser": "node tests/integration/reports.browser.cjs",
+    "test:roadtest": "node tests/integration/roadtest.browser.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.0",
+    "leaflet": "1.9.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "esbuild": "0.28.2",
+    "supabase": "3.2.0"
+  }
+}

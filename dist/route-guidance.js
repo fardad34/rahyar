@@ -28,7 +28,7 @@ function maneuverInstruction(step, previousRoad) {
     step.ref && previousRoad.ref ? step.ref === previousRoad.ref :
     step.name && step.name === previousRoad.name
   )) {
-    return 'Stay on ' + road;
+    return direction ? 'Keep ' + direction + ' to stay on ' + road : 'Stay on ' + road;
   } else if (type === 'fork' || type === 'merge') {
     instruction = (type === 'fork' ? 'Keep' : 'Merge') + (direction ? ' ' + direction : ' ahead');
   } else if (type === 'end of road' && direction) {
@@ -66,7 +66,7 @@ function buildRouteManeuvers(route) {
         if (routeRoads.at(-1)?.road !== road) routeRoads.push({at: distance, road});
       }
       if (type && !(type === 'arrive' && index < legs.length - 1) && !['depart', 'notification', 'new name'].includes(type)) {
-        maneuvers.push({at: distance, instruction: maneuverInstruction(step, previousRoad), symbol: maneuverSymbol(step.maneuver), direction: step.maneuver.modifier?.includes('left') ? 'left' : step.maneuver.modifier?.includes('right') ? 'right' : null});
+        maneuvers.push({speech:{type,exit:step.exits?.replace(/;/g,' / '),roundaboutExit:step.maneuver.exit,road:routeRoadLabel(step)},at: distance, instruction: maneuverInstruction(step, previousRoad), symbol: maneuverSymbol(step.maneuver), direction: step.maneuver.modifier?.includes('left') ? 'left' : step.maneuver.modifier?.includes('right') ? 'right' : null});
       }
       if (step.distance > 0) previousRoad = step;
       distance += Number.isFinite(step.distance) ? step.distance : 0;

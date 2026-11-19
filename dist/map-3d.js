@@ -69,7 +69,7 @@ try{
 function navigationStyle(){
   if(!navigationSatellite)return 'https://tiles.openfreemap.org/styles/'+(navigationNight?'dark':'liberty');
   return {version:8,sources:{imagery:{type:'raster',tiles:[imageryTiles],tileSize:256,maxzoom:19,attribution:imageryCredit}},
-    layers:[{id:'imagery',type:'raster',source:'imagery',paint:{'raster-brightness-max':navigationNight ? .65 : 1}}]};
+    layers:[{id:'imagery',type:'raster',source:'imagery',paint:{'raster-brightness-max':navigationNight ? .8 : 1}}]};
 }
 function syncFallbackBasemap(){
   if(!map||fallbackSatellite===navigationSatellite)return;
@@ -130,7 +130,7 @@ function initNavigationMap(){
       navigationReady=true;navigationFailed=false;navigationRouteRevision='';host.hidden=false;button.disabled=false;$('map').hidden=true;host.classList.add('ready');$('map-render-status').textContent=navigationSatellite?'Satellite · Esri World Imagery':'3D · OpenFreeMap / OpenStreetMap';
       const layers=navigationMap.getStyle().layers,building=layers.find(l=>l['source-layer']==='building');
       if(building&&!layers.some(l=>l.type==='fill-extrusion'))navigationMap.addLayer({id:'navigation-buildings',source:building.source,'source-layer':'building',type:'fill-extrusion',minzoom:14,paint:{'fill-extrusion-color':navigationNight?'#333f52':'#adbcc5','fill-extrusion-height':['coalesce',['get','render_height'],5],'fill-extrusion-base':['coalesce',['get','render_min_height'],0],'fill-extrusion-opacity':.8}},layers.find(l=>l.type==='symbol')?.id);
-      navigationMap.addSource('journey',{type:'geojson',data:{type:'FeatureCollection',features:[]}});navigationMap.addLayer({id:'journey-outline',type:'line',source:'journey',paint:{'line-color':navigationNight?'#112745':'#fff','line-width':15}});navigationMap.addLayer({id:'journey-line',type:'line',source:'journey',paint:{'line-color':navigationNight?'#78b7ff':'#1564bf','line-width':9}});
+      navigationMap.addSource('journey',{type:'geojson',data:{type:'FeatureCollection',features:[]}});navigationMap.addLayer({id:'journey-outline',type:'line',source:'journey',paint:{'line-color':navigationNight?'#112745':'#fff','line-width':15}});navigationMap.addLayer({id:'journey-line',type:'line',source:'journey',paint:{'line-color':'#a15aea','line-width':9}});
       navigationMap.addSource('stops',{type:'geojson',data:{type:'FeatureCollection',features:[]}});navigationMap.addLayer({id:'journey-stops',type:'circle',source:'stops',paint:{'circle-radius':6,'circle-color':['case',['get','government'],'#ffb76c','#a5e7cb'],'circle-stroke-color':'#102820','circle-stroke-width':2}});
       const position=navigationLastPosition||lastPos||(coords.length?pointOnRoute(progress):null);
       syncNavigationData();

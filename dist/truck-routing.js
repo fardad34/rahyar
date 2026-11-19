@@ -143,7 +143,7 @@ async function requestRoadRoutes(points, alternatives = 2, timeout, heading, can
   throw Object.assign(new Error('No Canada-only route found'), {code: 'CanadaOnlyRouteUnavailable'});
 }
 
-async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canadaOnly = false, through = false} = {}) {
+async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canadaOnly = false, through = false, segmenting = false} = {}) {
   const vehicle = activeRouteVehicle;
   if (vehicle === 'truck' && !activeTruckProfile) throw new Error('Truck profile is required');
   const costingOptions = vehicle === 'truck' ? {
@@ -168,7 +168,20 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
     request.locations[0].heading_tolerance = 45;
   }
   const url = 'https://valhalla1.openstreetmap.de/route?json=' + encodeURIComponent(JSON.stringify(request));
-  const result = await getJSON(url, {headers: {'X-Client-Id': location.hostname}}, timeout);
+  let result;
+  try { result = await getJSON(url, {headers: {'X-Client-Id': location.hostname}}, timeout); }
+  catch(error) {
+    if(!segmenting && (error.code==='DistanceExceeded'||error.errorCode===154) && typeof requestSegmentedVehicleRoute==='function'){
+      const capturedSession=typeof session==='number'?session:null;
+      const route=await requestSegmentedVehicleRoute(points,async pair=>{
+        if(capturedSession!==null&&capturedSession!==session)throw Object.assign(new Error('Trip changed'),{name:'AbortError'});
+        const routes=await fetchVehicleRoutes(pair,0,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true});
+        return canadaOnly?routes.filter(r=>!routeEntersUnitedStates(r)):routes;
+      },{canadaOnly,onProgress:count=>{if(typeof message==='function')message('Checking '+vehicleLabel(vehicle)+' route section '+count+'… Previous route stays visible.');}});
+      return [route];
+    }
+    throw error;
+  }
   if (result.code !== 'Ok') return [];
   return (result.routes || []).filter(route =>
     Number.isFinite(route.distance) && Number.isFinite(route.duration) &&
@@ -182,6 +195,8 @@ function truckRouteErrorMessage(error) {
   if (error.code === 'RouteCountryUnavailable') return 'Could not verify the country of the start or destination. Check your location and retry.';
   if (error.code === 'CanadaOnlyWaypoint') return 'This trip must stay in Canada. Choose a stop in Canada, or retry once your GPS location is in Canada.';
   if (error.code === 'CanadaOnlyRouteUnavailable') return 'No ' + vehicleLabel(activeRouteVehicle) + ' route was found that stays in Canada. Try a Canadian waypoint.';
+  if (error.code === 'SegmentBudgetExceeded') return 'Long-route calculation reached its request budget. Your previous route is preserved. Retry or select a waypoint.';
+  if (['SegmentNoRoute','DisconnectedSegments'].includes(error.code)) return 'Could not connect all sections with your vehicle restrictions. Your previous route is preserved. Try another corridor or waypoint.';
   if (error.code === 'DistanceExceeded' || error.errorCode === 154) {
     return 'This trip exceeds the routing service distance limit. Choose an intermediate destination for the first leg.';
   }

@@ -1,0 +1,11 @@
+const {test}=require('node:test');const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+function ctx(){const c={loadCatalog:async()=>[{country:'CA',coord:[1,0]},{country:'CA',coord:[3,0]}],hav:(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1])*100000};vm.createContext(c);vm.runInContext(fs.readFileSync('dist/route-segmentation.js','utf8'),c);return c;}
+function route(a,b){return {distance:100000,duration:3600,geometry:{coordinates:[a,b]},legs:[{steps:[{distance:100000,duration:3600,maneuver:{type:'depart'}},{distance:0,duration:0,maneuver:{type:'arrive'}}]}]};}
+test('segmentation returns one continuous vehicle-routed shape with original waypoint legs',async()=>{
+ const c=ctx();let calls=0;const result=await c.requestSegmentedVehicleRoute([[0,0],[2,0],[4,0]],async([a,b])=>{calls++;if(b[0]-a[0]>1)throw Object.assign(Error('limit'),{code:'DistanceExceeded'});return [route(a,b)];});
+ assert.equal(result.segmentCount,4);assert.equal(result.distance,400000);assert.equal(result.duration,14400);assert.equal(result.legs.length,2);assert.deepEqual(JSON.parse(JSON.stringify(result.geometry.coordinates)),[[0,0],[1,0],[2,0],[3,0],[4,0]]);assert(calls<=6);assert.equal(result.legs.flatMap(l=>l.steps).reduce((n,s)=>n+s.distance,0),result.distance);assert.equal(result.legs.flatMap(l=>l.steps).reduce((n,s)=>n+s.duration,0),result.duration);
+});
+test('segment budget and disconnected joins fail explicitly rather than drawing unverified gaps',async()=>{
+ const c=ctx();await assert.rejects(c.requestSegmentedVehicleRoute([[0,0],[4,0]],async()=>{throw Object.assign(Error('limit'),{code:'DistanceExceeded'});},{maxRequests:1}),e=>e.code==='SegmentBudgetExceeded');
+ let n=0;await assert.rejects(c.requestSegmentedVehicleRoute([[0,0],[1,0],[2,0]],async([a,b])=>{n++;if(n===2)return [route([1.5,0],b)];if(n>2)return [];return [route(a,b)];}),e=>e.code==='DisconnectedSegments');
+});
