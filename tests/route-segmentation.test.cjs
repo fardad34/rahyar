@@ -18,3 +18,28 @@ test('artificial split-city excursion is removed only by a shorter real vehicle 
  const result=await c.bypassArtificialStops([a,b],async([x,y])=>[{distance:100000,duration:5000,legs:[{steps:[step(x,y,100000)]}],geometry:{coordinates:[x,y]}}]);assert.equal(result.length,1);assert.equal(result[0].distance,200000);assert(!result[0].geometry.coordinates.some(p=>p[1]===1));
  const retained=await c.bypassArtificialStops([a,b],async()=>{throw Error('provider down')});assert.equal(retained.length,2);
 });
+test('long journeys retain real section alternatives with all original waypoint legs',async()=>{
+ const c=ctx();let calls=0;
+ const result=await c.requestSegmentedVehicleRoute([[0,0],[2,0],[4,0]],async([a,b])=>{
+  calls++;if(b[0]-a[0]>1)throw Object.assign(Error('limit'),{code:'DistanceExceeded'});
+  const primary=route(a,b),alternate=route(a,b);alternate.distance=120000;alternate.duration=4000;
+  alternate.geometry.coordinates=[a,[(a[0]+b[0])/2,.2],b];alternate.legs[0].steps[0].distance=120000;alternate.legs[0].steps[0].duration=4000;
+  return [primary,alternate];
+ },{alternativeCount:2});
+ assert.equal(result.alternativeRoutes.length,2);assert(calls<=6,'retaining alternatives must not add network requests');
+ for(const alt of result.alternativeRoutes){assert.equal(alt.legs.length,2);assert.equal(alt.distance,420000);assert.equal(alt.duration,14800);assert(alt.geometry.coordinates.some(p=>p[0]===2&&p[1]===0));assert(alt.geometry.coordinates.some(p=>p[1]===.2));assert.equal(alt.legs.flatMap(l=>l.steps).reduce((n,s)=>n+s.distance,0),alt.distance);}
+});
+test('single provider option never produces invented alternatives and disconnected alternate snaps are rejected',async()=>{
+ const c=ctx();const result=await c.requestSegmentedVehicleRoute([[0,0],[1,0],[2,0]],async([a,b])=>[route(a,b)],{alternativeCount:2});assert.equal(result.alternativeRoutes.length,0);
+ const invalid=await c.requestSegmentedVehicleRoute([[0,0],[1,0]],async([a,b])=>[route(a,b),route([.1,0],b)],{alternativeCount:2});assert.equal(invalid.alternativeRoutes.length,0);
+});
+test('public routing entry requests truck alternatives for every user-waypoint leg',async()=>{
+ const c=ctx(),requests=[];c.location={hostname:'rahyar.test'};c.regionAt=()=>({country:'CA'});
+ c.getJSON=async url=>{const r=JSON.parse(new URL(url).searchParams.get('json'));requests.push(r);const [a,b]=r.locations.map(p=>[p.lon,p.lat]);const second=route(a,b);second.geometry.coordinates=[a,[(a[0]+b[0])/2,.1],b];return {code:'Ok',routes:[route(a,b),second]};};
+ vm.runInContext(fs.readFileSync('dist/truck-routing.js','utf8'),c);
+ vm.runInContext('activeTruckProfile={height:4.15,width:2.6,length:23,weight:39.5,axle_load:9,axle_count:5}',c);
+ const routes=await c.requestRoadRoutes([[0,0],[1,0],[2,0]],2,undefined,undefined,true);
+ assert.equal(routes.length,3);assert.equal(requests.length,2);
+ for(const r of requests){assert.equal(r.alternates,2);assert.equal(r.costing,'truck');assert.equal(r.costing_options.truck.height,4.15);assert.equal(r.costing_options.truck.weight,39.5);}
+ for(const r of routes)assert.equal(r.legs.length,2);
+});

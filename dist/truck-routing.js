@@ -125,6 +125,10 @@ function routeEntersUnitedStates(route) {
 }
 
 async function requestRoadRoutes(points, alternatives = 2, timeout, heading, canadaOnly = false) {
+  if(points.length>2&&alternatives>0&&typeof requestSegmentedVehicleRoute==='function'){
+    if(canadaOnly&&points.some(point=>regionAt(point)?.country==='US'))throw Object.assign(new Error('A location is in the United States'),{code:'CanadaOnlyWaypoint'});
+    return segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternatives);
+  }
   if (!canadaOnly) return fetchVehicleRoutes(points, alternatives, timeout, heading);
   if (points.some(point => regionAt(point)?.country === 'US')) {
     throw Object.assign(new Error('A location is in the United States'), {code: 'CanadaOnlyWaypoint'});
@@ -140,18 +144,18 @@ async function requestRoadRoutes(points, alternatives = 2, timeout, heading, can
       if (domesticHighway.length) return domesticHighway;
     }
   }
-  if(typeof requestSegmentedVehicleRoute==='function')return segmentedVehicleRoutes(points,timeout,heading,true);
+  if(typeof requestSegmentedVehicleRoute==='function')return segmentedVehicleRoutes(points,timeout,heading,true,alternatives);
   throw Object.assign(new Error('No Canada-only route found'), {code: 'CanadaOnlyRouteUnavailable'});
 }
 
-async function segmentedVehicleRoutes(points,timeout,heading,canadaOnly){
+async function segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternatives=0){
   const capturedSession=typeof session==='number'?session:null;
   const route=await requestSegmentedVehicleRoute(points,async pair=>{
     if(capturedSession!==null&&capturedSession!==session)throw Object.assign(new Error('Trip changed'),{name:'AbortError'});
-    const routes=await fetchVehicleRoutes(pair,0,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true});
+    const routes=await fetchVehicleRoutes(pair,alternatives,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true});
     return canadaOnly?routes.filter(r=>!routeEntersUnitedStates(r)):routes;
-  },{canadaOnly,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
-  return [route];
+  },{canadaOnly,alternativeCount:alternatives,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
+  const {alternativeRoutes=[],...primary}=route;return [primary,...alternativeRoutes].slice(0,3);
 }
 async function vehicleRoutingRequest(request,timeout){
   // Same-origin gateway avoids client CORS/preflight and URL-size dependencies.
@@ -193,7 +197,7 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
   try { result = await vehicleRoutingRequest(request,timeout); }
   catch(error) {
     const canSplit=typeof requestSegmentedVehicleRoute==='function'&&typeof hav==='function';
-    if(!segmenting&&canSplit&&(error.code==='DistanceExceeded'||error.errorCode===154||((error.name==='TimeoutError'||error.name==='TypeError'||error.status>=500)&&points.some((p,i)=>i>0&&hav(points[i-1],p)>150000))))return segmentedVehicleRoutes(points,timeout,heading,canadaOnly);
+    if(!segmenting&&canSplit&&(error.code==='DistanceExceeded'||error.errorCode===154||((error.name==='TimeoutError'||error.name==='TypeError'||error.status>=500)&&points.some((p,i)=>i>0&&hav(points[i-1],p)>150000))))return segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternatives);
     throw error;
   }
   if (result.code !== 'Ok') return [];

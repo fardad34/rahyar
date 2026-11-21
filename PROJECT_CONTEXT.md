@@ -50,3 +50,7 @@ Run `npm run verify` after edits. Opt-in live and two-context browser tests use 
 ## 21 November 2026 — trip reports and protected sharing
 
 See [implementation, verification and rollback](docs/TRIP_REPORTS_20261121.md). New journal/admin/contact/share tables are additive and RLS protected. Owner account is invited but awaits email verification. Private journeys, actual GPS evidence, map route choices, date history, print/PDF/JSON, protected sharing and device/cloud persistence are integrated without changing the frontend framework. Public sharing remains blocked by Netlify account login; exact reported BC border/exit cases and physical Safari soak testing remain unverified.
+
+## 21 November follow-up — completion review
+
+The authoritative current status is [request completion review](docs/REQUEST_COMPLETION_REVIEW_20261121.md); older dated notes above describe earlier states. Segmented and user-waypoint routing now retain up to three genuine full-route alternatives, keeping original legs, current truck dimensions and country filtering. Variants replace a single provider-routed section and are not an exhaustive corridor search. Report action controls follow the six-language selector. No database or production-access changes are included.

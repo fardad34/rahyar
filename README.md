@@ -101,8 +101,10 @@ Profiles and saved records use owner RLS. Account settings sync is explicit and 
 
 No application redistribution license was supplied. Preserve the existing vendor/data attribution; Leaflet Rotate includes GPL-3.0 terms. Review licensing separately before commercial redistribution.
 
-Latest road-test corrections and current limitations: [18 November feedback update](docs/ROADTEST_FEEDBACK_20261118.md). On the existing preview, use **More controls → به‌روزرسانی برنامه · Update app** to refresh while preserving local trip/settings and an existing valid session. Hosting login protection is independent.
+Latest road-test corrections and current limitations: [18 November feedback update](docs/ROADTEST_FEEDBACK_20261118.md). On the existing preview, use **More controls → Update app** (translated according to Settings → Interface language) to refresh while preserving local trip/settings and an existing valid session. Hosting login protection is independent.
 
 Latest Safari/UI follow-up, verification and remaining data limitations: [Safari follow-up](docs/SAFARI_UI_FOLLOWUP_20261118.md).
 
 Trip reporting, admin invitation, protected sharing, verification and remaining limits: [21 November update](docs/TRIP_REPORTS_20261121.md). Reports are under Settings or the main menu → Trip reports & sharing.
+
+Current request-by-request status, including incomplete requirements: [completion review](docs/REQUEST_COMPLETION_REVIEW_20261121.md). Long-route and waypoint alternatives retain genuine provider options; three are never invented when unavailable.
