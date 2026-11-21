@@ -78,3 +78,13 @@ Return only the development preview to commit `8a1c9fe4b9b5b107a204b40c43261e34d
 - Six-language menu/report action browser suite passed.
 - Initial external-service-dependent browser attempts timed out because the local server did not use this environment's outbound proxy. Retests used `NODE_USE_ENV_PROXY=1 PORT=3049 npm run dev`; no routing response was mocked to turn the failure into a pass. This flag is only needed in environments requiring an outbound proxy.
 - Responsive UI suite finally passed at 1180×820, 390×844 and 844×390, including sheet gestures, speed/maneuver visibility, menu interactions and active-trip reload. An earlier proxy-corrected live startup also timed out before the successful rerun; public geocoding/routing availability is intermittent and no SLA is claimed. Startup failure diagnostics were added without relaxing assertions.
+
+## Route-label behavior correction
+
+The selected-route km/time label is temporary: it expires 60 seconds after a new route is selected. Routine map redraws, source recovery and setting the same selected route do not restart the minute. Selecting a different route starts a new minute. The route line, current-road name and active-trip bottom summary are retained.
+
+Alternative labels are anchored only on a visible branch at least 24 screen pixels away from the selected route, avoiding the turn/planning/trip panels. If the distinguishing branch is outside the viewport, no alternative label is put on the common road above the truck; the alternative line remains selectable. The 2D fallback uses the same label rules.
+
+Regression tests cover expiration, redraw preservation, route reselection, common-road rejection and offscreen rejection. A real-provider/map browser test with emulated GPS and a controlled clock confirmed expiration after one minute without ending GPS or deleting route geometry. Physical Safari testing is still manual.
+
+Label follow-up validation: `npm run verify` passed **85 tests, 0 failures**; production-style build passed. The focused real-map/provider browser test confirmed the one-minute timeout and preservation of the active GPS/route. Tests explicitly cover both MapLibre and Leaflet fallback behavior.
