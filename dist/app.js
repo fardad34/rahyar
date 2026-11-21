@@ -71,7 +71,7 @@ function routeOptionLabel(route,index) {
 }
 
 function displayRouteChoices(routes,index=0) {
-  routeChoices=routes;
+  routes=routes.slice(0,3);routeChoices=routes;window.RahyarRouteOptions?.set(routes,index);
   $('route-choices').hidden=!routes.length;
   $('focus-route-choice').hidden=routes.length<2;
   $('route-choice-status').textContent=routes[0]?.segmented?'Continuous '+vehicleLabel(activeRouteVehicle)+' route · '+routes[0].segmentCount+' provider-routed sections. Mapped restrictions may be incomplete; follow posted signs.':routes.length===1?'One route available. Choose a waypoint to request a different corridor.':'';
@@ -96,11 +96,11 @@ function routeContinuity(route) {
 
 function chooseRoute(index) {
   const route=routeChoices[index];
-  if(!route||routeBusy||watch===null||isDemo||!lastPos)return;
+  if(!route||routeBusy||isDemo)return;
   selectedAlternative=true;
   displayRouteChoices(routeChoices,index);
   pendingVia=route.highwayVia||route.cityVia||null;
-  activateRoute(route,pendingVia,lastPos,session);
+  activateRoute(route,pendingVia,lastPos||route.geometry.coordinates[0],session);if(watch===null){$('mode').textContent='Route preview';message('Route selected for review. Start GPS to revalidate before driving.');}
 }
 
 function setCustomVia(place) {
@@ -299,6 +299,7 @@ async function discoverCities(token,revision=routeRevision){
   message(failures?(hasCatalog?"Cities loaded from the regional database. Additional online town details are unavailable.":"Some city information could not be loaded. Use Retry to complete the list."):"All identified cities on your route to "+dest.name+" are listed in route order.");
 }
 function activateRoute(route,via,c,token) {
+  window.RahyarJournal?.routeSelected(route,guidanceOffRoute?'off-route reroute':selectedAlternative?'driver selection':'provider');
   const revision=++routeRevision;
   prepare(route.geometry.coordinates,route.distance);
   activeCityBoundaries=new Map();activeCitySamples=routeCitySamples(coords);
@@ -353,6 +354,7 @@ function usesBC17And91(route){
     after17.some(step=>/\bBC 91\b/i.test(step.ref||''))&&
     !after17.some(step=>/\bBC 91A\b/i.test(step.ref||''));
 }
+function preferredRouteIndex(routes){if(!selectedAlternative||!coords.length||guidanceOffRoute)return 0;const scores=routes.map(routeContinuity);return scores.indexOf(Math.max(...scores));}
 async function calculate(c,token,heading) {
   if(!dest||routeBusy||token!==session)return;
   routeBusy=true;
@@ -373,7 +375,7 @@ async function calculate(c,token,heading) {
     catch { throw Object.assign(new Error('Could not load country boundaries'), {code:'RouteCountryUnavailable'}); }
     if(token!==session)return;
     const startCountry=regionAt(tripDeparture?.place.coord||c)?.country;
-    const destinationCountry=dest.country||regionAt(dest.coord)?.country;
+    const destinationCountry=regionAt(dest.coord)?.country||dest.country;
     if(!startCountry||!destinationCountry)throw Object.assign(new Error('Could not locate a trip endpoint'), {code:'RouteCountryUnavailable'});
     const isNorthAmerican=code=>code==='CA'||code==='US';
     if(isNorthAmerican(startCountry)!==isNorthAmerican(destinationCountry)){
@@ -397,11 +399,7 @@ async function calculate(c,token,heading) {
       }
     }
     if(!routes.length)throw Error('No route returned');
-    let index=0;
-    if(selectedAlternative&&coords.length){
-      const scores=routes.map(routeContinuity);
-      index=scores.indexOf(Math.max(...scores));
-    }
+    const index=preferredRouteIndex(routes);
     displayRouteChoices(routes,index);
     pendingVia=routes[index].highwayVia||routes[index].cityVia||via;
     activateRoute(routes[index],pendingVia,c,token);
@@ -414,13 +412,15 @@ async function calculate(c,token,heading) {
     if(!coords.length)$('trip-summary-empty').textContent=routeError;
     $('retry-route').hidden=false;
   } finally {
-    if(token===session){routeBusy=false;updateRouteGuidance()}
+    if(token===session){routeBusy=false;updateRouteGuidance();if(coords.length)window.RahyarJournal?.offer(c).catch(()=>{});}
   }
 }
 function onPosition(p,token) {
   if(token!==session)return;
+  if(Number.isFinite(p.timestamp)&&Date.now()-p.timestamp>20000){updateGpsStatus('Waiting for a fresh GPS fix; selected route retained.',true);return;}
   const c=[p.coords.longitude,p.coords.latitude];
   lastPos=c;
+  window.RahyarJournal?.begin(c).then(()=>window.RahyarJournal?.record(p)).catch(()=>{});
   gpsTime=Date.now();
   if(!tripDeparture)tripDeparture={place:{coord:c},time:new Date(gpsTime)};
   recordGpsHeading(p.coords,c);
@@ -479,6 +479,7 @@ function refreshLiveProgress() {
 }
 function stopWatch(){setScreenAwakeReason('trip',false);if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;session++;routeBusy=false;$('route-vehicle').disabled=false;displayRouteChoices([]);selectedAlternative=false;$('start').hidden=!dest;$('start').textContent=coords.length?'Resume trip':'Start saved trip';$('stop').hidden=true;$('trip-actions').hidden=!dest;updateRouteGuidance()}
 function endTrip(arrived=false){
+  window.RahyarJournal?.finish(arrived).catch(()=>{});
   window.rahyarSetTripIntent?.(false);
   stopWatch();
   tripEndState=arrived?'Arrived at your destination':'Trip ended';
@@ -522,8 +523,8 @@ function start(){
   }
   unlockNavigationAudio();
   if(spokenAlerts&&!voiceActivated)speakNavigation('enabled');
-  resetMapHeading();if(!navigator.geolocation){updateGpsStatus("Location is not available in this browser. Open this link in Safari or Chrome.",true);return}stopWatch();tripEndState='';arrivalFixes=0;lastArrivalFix=null;spokenManeuvers.clear();$('end-trip').hidden=false;activeRouteVehicle=vehicle;activeTruckProfile=profile;mainMapBrowsing=false;pendingVia=selectedVia();viaRouteDistance=null;offRouteFixes=0;setScreenAwakeReason('trip',true);isDemo=false;tripDeparture=null;$('trip-summary-empty').textContent='Calculating your '+vehicleLabel(vehicle)+' route…';resetRoadContext();travelDistances=[0];travelSeconds=[0];timingSnapshot=Date.now();discoveryBusy=false;$('retry-cities').hidden=true;$('discovery-status').textContent="Cities will load after GPS connects.";coords=[];targets=[];routeLength=0;progress=0;lastPos=null;gpsTime=0;routeManeuvers=[];guidanceOffRoute=false;lastRouteAt=0;$('retry-route').hidden=true;syncNavigationData();render();if(map){if(routeLayer)map.removeLayer(routeLayer);markers.forEach(m=>map.removeLayer(m));if(positionLayer)map.removeLayer(positionLayer);positionLayer=null}const token=session;window.rahyarSetTripIntent?.(true);$('route-vehicle').disabled=true;updateGpsStatus("Waiting for location permission and GPS\u2026");$('mode').textContent="Live trip";$('hero-state').textContent="Waiting for GPS";$('status').textContent="\u25cc Connecting GPS";$('start').hidden=true;$('stop').hidden=false;$('trip-actions').hidden=false;$('route-label').textContent="Your location \u2192 "+dest.name;message('');watch=navigator.geolocation.watchPosition(p=>onPosition(p,token),e=>{if(token!==session)return;gpsError(e);if(e.code===1){stopWatch();window.rahyarSetTripIntent?.(false);} /* Temporary GPS errors keep the active trip and watch alive. */},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});updateRouteGuidance()}
-$('retry-route').onclick=()=>{if(lastPos&&!isDemo&&!routeBusy)calculate(lastPos,session)};for(const id of ['route-choice','focus-route-choice'])$(id).onchange=()=>chooseRoute(Number($(id).value));$('route-via').onchange=()=>{$('route-via-note').textContent='';updateViaLabel();if(watch!==null)start()};$('start').onclick=start;$('end-trip').onclick=()=>endTrip();$('stop').onclick=()=>{window.rahyarSetTripIntent?.(false);stopWatch();updateGpsStatus("GPS stopped. City search is available.");$('status').textContent="Location paused";$('hero-state').textContent="Paused";message("Tracking paused. Distances and arrival estimates are frozen at the last update.")};$('destination').onchange=()=>{const c=destinations[$('destination').value];if(c)selectDestination(c)};
+  resetMapHeading();if(!navigator.geolocation){updateGpsStatus("Location is not available in this browser. Open this link in Safari or Chrome.",true);return}stopWatch();tripEndState='';arrivalFixes=0;lastArrivalFix=null;spokenManeuvers.clear();$('end-trip').hidden=false;activeRouteVehicle=vehicle;activeTruckProfile=profile;mainMapBrowsing=false;pendingVia=selectedVia()||(pendingVia?.memoryRoute?pendingVia:null);viaRouteDistance=null;offRouteFixes=0;setScreenAwakeReason('trip',true);isDemo=false;tripDeparture=null;$('trip-summary-empty').textContent='Calculating your '+vehicleLabel(vehicle)+' route…';resetRoadContext();travelDistances=[0];travelSeconds=[0];timingSnapshot=Date.now();discoveryBusy=false;$('retry-cities').hidden=true;$('discovery-status').textContent="Cities will load after GPS connects.";coords=[];targets=[];routeLength=0;progress=0;lastPos=null;gpsTime=0;routeManeuvers=[];guidanceOffRoute=false;lastRouteAt=0;$('retry-route').hidden=true;syncNavigationData();render();if(map){if(routeLayer)map.removeLayer(routeLayer);markers.forEach(m=>map.removeLayer(m));if(positionLayer)map.removeLayer(positionLayer);positionLayer=null}const token=session;window.rahyarSetTripIntent?.(true);$('route-vehicle').disabled=true;updateGpsStatus("Waiting for location permission and GPS\u2026");$('mode').textContent="Live trip";$('hero-state').textContent="Waiting for GPS";$('status').textContent="\u25cc Connecting GPS";$('start').hidden=true;$('stop').hidden=false;$('trip-actions').hidden=false;$('route-label').textContent="Your location \u2192 "+dest.name;message('');watch=navigator.geolocation.watchPosition(p=>onPosition(p,token),e=>{if(token!==session)return;gpsError(e);if(e.code===1){stopWatch();window.rahyarSetTripIntent?.(false);} /* Temporary GPS errors keep the active trip and watch alive. */},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});updateRouteGuidance()}
+$('retry-route').onclick=()=>{if(lastPos&&!isDemo&&!routeBusy)calculate(lastPos,session)};for(const id of ['route-choice','focus-route-choice'])$(id).onchange=()=>chooseRoute(Number($(id).value));$('route-via').onchange=()=>{if(!$('route-via').value)pendingVia=null;$('route-via-note').textContent='';updateViaLabel();if(watch!==null)start()};$('start').onclick=start;$('end-trip').onclick=()=>endTrip();$('stop').onclick=()=>{window.rahyarSetTripIntent?.(false);stopWatch();updateGpsStatus("GPS stopped. City search is available.");$('status').textContent="Location paused";$('hero-state').textContent="Paused";message("Tracking paused. Distances and arrival estimates are frozen at the last update.")};$('destination').onchange=()=>{const c=destinations[$('destination').value];if(c)selectDestination(c)};
 function selectDestination(city,startNow=true){
   if(!city)return;clearTruckProfileStart();const active=watch!==null,wasDemo=isDemo;dest=city;tripEndState='';$('save-current-destination').disabled=false;if(!active)$('end-trip').hidden=true;isDemo=false;drawMapPin(city.mapPin ? city.coord : null);
   try{localStorage.setItem('rahyar.lastDestination',JSON.stringify(city))}catch{}

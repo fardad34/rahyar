@@ -7,7 +7,8 @@ function validate(body){
  const options=body.costing_options?.[body.costing]||{},safe={};
  for(const [key,value]of Object.entries(options)){if(key==='hazmat'){if(typeof value!=='boolean')throw Error('Invalid cargo');safe.hazmat=value;continue;}if(!limits[key]||!Number.isFinite(value)||value<limits[key][0]||value>limits[key][1])throw Error('Invalid vehicle configuration');safe[key]=value;}
  if(body.costing==='truck'&&!['height','width','length','weight','axle_load','axle_count'].every(key=>Number.isFinite(safe[key])))throw Error('Truck dimensions are required');
- return {locations,costing:body.costing,costing_options:{[body.costing]:safe},format:'osrm',shape_format:'geojson',alternates:Math.min(2,Math.max(0,Number.isInteger(body.alternates)?body.alternates:0))};
+ const exclusions=body.exclude_locations;if(exclusions!==undefined&&(!Array.isArray(exclusions)||exclusions.length>12||exclusions.some(p=>!Number.isFinite(p.lon)||!Number.isFinite(p.lat)||Math.abs(p.lon)>180||Math.abs(p.lat)>90)))throw Error('Invalid road exclusions');
+ return {...(exclusions?{exclude_locations:exclusions.map(p=>({lon:p.lon,lat:p.lat}))}:{}),locations,costing:body.costing,costing_options:{[body.costing]:safe},format:'osrm',shape_format:'geojson',alternates:Math.min(2,Math.max(0,Number.isInteger(body.alternates)?body.alternates:0))};
 }
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','no-store');

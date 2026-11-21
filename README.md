@@ -46,7 +46,7 @@ The original invocation remains supported from the repository root:
 node --test tests/*.test.cjs
 ```
 
-The original baseline reported 25 results. This branch reports **67**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
+The original baseline reported 25 results. This branch reports **79**, adding report confidence/direction/expiry, queue ownership, voice availability, data-assistant, staging adapter and Wasi identity/search tests. Two existing assertions were updated for intentionally brighter satellite rendering and explicit fork direction wording. No original test file or fixture was removed.
 
 Live tests require two dedicated test accounts and a credentials JSON file **outside the repository**, passed via `RAHYAR_TEST_USERS_FILE`. Do not use real driver accounts or commit credentials. Browser tests use system Chromium by default (`CHROMIUM_PATH` can override) and synthetic GPS/recorded fixtures. They do not prove physical Safari or actual speech audibility. Set `BASE_URL` for the browser's application URL. Network-restricted Node environments may require their platform's proxy configuration (this workspace uses `NODE_USE_ENV_PROXY=1`).
 
@@ -104,3 +104,5 @@ No application redistribution license was supplied. Preserve the existing vendor
 Latest road-test corrections and current limitations: [18 November feedback update](docs/ROADTEST_FEEDBACK_20261118.md). On the existing preview, use **More controls → به‌روزرسانی برنامه · Update app** to refresh while preserving local trip/settings and an existing valid session. Hosting login protection is independent.
 
 Latest Safari/UI follow-up, verification and remaining data limitations: [Safari follow-up](docs/SAFARI_UI_FOLLOWUP_20261118.md).
+
+Trip reporting, admin invitation, protected sharing, verification and remaining limits: [21 November update](docs/TRIP_REPORTS_20261121.md). Reports are under Settings or the main menu → Trip reports & sharing.

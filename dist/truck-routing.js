@@ -181,6 +181,7 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
     shape_format: 'geojson',
     alternates: points.length === 2 ? alternatives : 0,
   };
+  const avoids=typeof window!=='undefined'?window.RahyarMapPlaces?.avoids?.(vehicle):null;if(avoids?.length)request.exclude_locations=avoids.map(p=>({lon:p.coord[0],lat:p.coord[1]}));
   if (through) {
     for (const waypoint of request.locations.slice(1, -1)) waypoint.type = 'through';
   }

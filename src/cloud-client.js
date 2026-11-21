@@ -18,6 +18,7 @@ async function fetchReports(){
  state.reports=data;message(data.length===500?'Showing 500 most recent reports in this area. Narrow the map for more.':'Shared reports connected · '+state.queue.length+' queued');notify();
 }
 async function connectReports(){
+ if(state.user){const phone=state.user.user_metadata?.contact_phone;if(typeof phone==='string'&&/^\+[1-9][0-9]{7,14}$/.test(phone))await state.client.from('rahyar_trip_contacts').upsert({user_id:state.user.id,phone});document.dispatchEvent(new CustomEvent('rahyar:auth'));}
  if(state.channel){await state.client.removeChannel(state.channel);state.channel=null;}
  if(!state.user){state.reports=[];notify();return;}
  state.channel=state.client.channel('rahyar-road-reports').on('postgres_changes',{event:'*',schema:'public',table:'rahyar_road_reports'},()=>fetchReports()).subscribe(status=>{
@@ -83,7 +84,7 @@ async function init(){
  try{
   state.queue=JSON.parse(localStorage.getItem(queueKey)||'[]');if(!Array.isArray(state.queue))state.queue=[];
   const response=await fetch('/api/config');if(!response.ok)throw Error('Backend configuration unavailable');const config=await response.json();
-  state.client=createClient(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  state.client=createClient(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   const {data}=await state.client.auth.getSession();state.user=data.session?.user||null;sessionLabel();
   state.client.auth.onAuthStateChange((event,session)=>{
    state.user=session?.user||null;sessionLabel();
@@ -93,11 +94,13 @@ async function init(){
   await connectReports();
  }catch{message('Shared reports unavailable. Existing navigation remains usable.');}
 }
+const phoneLabel=document.createElement('label');phoneLabel.textContent='Phone for registration (international format, no SMS verification)';const phoneInput=document.createElement('input');phoneInput.type='tel';phoneInput.id='cloud-phone';phoneInput.placeholder='+16045551234';phoneLabel.append(phoneInput);$('cloud-password').after(phoneLabel);
+const emailLink=document.createElement('button');emailLink.type='button';emailLink.className='secondary';emailLink.textContent='Send email sign-in link';emailLink.onclick=async()=>{if(!state.client){message('Account service unavailable.');return;}const email=$('cloud-email').value.trim();if(!email){message('Enter your email first.');return;}const {error}=await state.client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:location.origin}});message(error?error.message:'Check your email for the secure sign-in link.');};$('cloud-auth').append(emailLink);
 $('cloud-auth').onsubmit=async event=>{
  event.preventDefault();if(!state.client){message('Backend unavailable. Try reloading after reconnecting.');return;}
  const email=$('cloud-email').value.trim(),password=$('cloud-password').value;
- const signup=event.submitter?.value==='signup';
- const result=signup?await state.client.auth.signUp({email,password,options:{emailRedirectTo:location.origin}}):await state.client.auth.signInWithPassword({email,password});
+ const signup=event.submitter?.value==='signup';if(signup&&!/^\+[1-9][0-9]{7,14}$/.test(phoneInput.value.trim())){message('Enter your phone in international format, for example +16045551234. No SMS is sent.');return;}
+ const result=signup?await state.client.auth.signUp({email,password,options:{emailRedirectTo:location.origin,data:{contact_phone:phoneInput.value.trim()}}}):await state.client.auth.signInWithPassword({email,password});
  $('cloud-password').value='';message(result.error?result.error.message:signup&&!result.data.session?'Check your email to confirm your account, then sign in.':'Signed in.');
 };
 $('cloud-signout').onclick=async()=>{

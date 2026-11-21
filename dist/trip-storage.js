@@ -4,7 +4,7 @@
  let snapshot=null,gpsWatch=null,previewAttempted=false;const fallbackKey='rahyar.routeFallback.v1';
  function mirror(value){
   // Keep the full route line/profile/instructions; avoid duplicating every step's shape/intersection graph.
-  const compact={...value,route:{...value.route,legs:(value.route.legs||[]).map(leg=>({...leg,steps:(leg.steps||[]).map(step=>{const {geometry,intersections,...guidance}=step;return guidance;})}))}};
+  const compact={...value,alternatives:undefined,selectedChoice:0,route:{...value.route,legs:(value.route.legs||[]).map(leg=>({...leg,steps:(leg.steps||[]).map(step=>{const {geometry,intersections,...guidance}=step;return guidance;})}))}};
   try{const text=JSON.stringify(compact);if(text.length>2200000)throw Error('Route exceeds backup capacity');localStorage.setItem(fallbackKey,text);}
   catch{try{localStorage.removeItem(fallbackKey);}catch{}$('offline-status').textContent='Persistent route backup is unavailable. Keep this tab open; Safari storage may be full or restricted.';}
  }
@@ -32,7 +32,7 @@
  window.rahyarCheckpointTrip=async()=>{if(snapshot){snapshot={...snapshot,updatedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};mirror(snapshot);await transaction('readwrite',s=>s.put(snapshot,'last'));}};
  window.rahyarPersistTrip=async(route,via)=>{
   previewAttempted=true;
-  const value={version:1,route,maneuvers:routeManeuvers,via,viaValue:$('route-via').value,destination:dest,vehicle:activeRouteVehicle,profile:activeTruckProfile,origin:route.geometry.coordinates[0],savedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};
+  const value={version:1,route,alternatives:routeChoices.slice(0,3),selectedChoice:Number($('route-choice').value)||0,maneuvers:routeManeuvers,via,viaValue:$('route-via').value,destination:dest,vehicle:activeRouteVehicle,profile:activeTruckProfile,origin:route.geometry.coordinates[0],savedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};
   snapshot=value;mirror(value);try{await transaction('readwrite',s=>s.put(value,'last'));render();}catch(error){$('offline-status').textContent=error.message;}
  };
  $('review-saved-route').onclick=()=>{
@@ -85,10 +85,10 @@
    activeRouteVehicle=snapshot.vehicle;
    prepare(snapshot.route.geometry.coordinates,snapshot.route.distance);
    buildTravelProfile(snapshot.route);routeManeuvers=buildRouteManeuvers(snapshot.route);
-   progress=Math.max(0,Math.min(routeLength,snapshot.progress||0));tripDeparture={place:{coord:snapshot.origin},time:new Date()};activeTruckProfile=snapshot.profile;
+   progress=Math.max(0,Math.min(routeLength,snapshot.progress||0));const departureTime=new Date(snapshot.departure?.time||snapshot.savedAt);tripDeparture={place:snapshot.departure?.place||{coord:snapshot.origin},time:Number.isFinite(departureTime.getTime())?departureTime:new Date()};activeTruckProfile=snapshot.profile;
    pendingVia=snapshot.via||null;
    if([...$('route-via').options].some(o=>o.value===snapshot.viaValue)){$('route-via').value=snapshot.viaValue;updateViaLabel();}
-   displayRouteChoices([snapshot.route],0);setTargets(snapshot.cities?.length?snapshot.cities:known);drawRoute();
+   displayRouteChoices(snapshot.alternatives?.length?snapshot.alternatives:[snapshot.route],snapshot.selectedChoice||0);setTargets(snapshot.cities?.length?snapshot.cities:known);drawRoute();
    $('route-type').textContent='Saved route preview · Revalidate before driving';
    $('map-status').textContent='Saved origin → '+snapshot.destination.name+' · GPS tracking is off';
    $('start').textContent='Start & revalidate saved route';

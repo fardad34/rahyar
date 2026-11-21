@@ -1,6 +1,6 @@
 'use strict';
 
-const siteNoticeVersion = '2026-11-16.1';
+const siteNoticeVersion = '2026-11-21.1';
 const siteNoticeKey = 'rahyar.siteNotice';
 
 function savedSiteNotice() {

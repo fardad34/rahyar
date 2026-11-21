@@ -114,7 +114,8 @@ function initMapPin() {
     $('search-status').textContent = '';
   });
   const choosePin = event => {
-    if(watch!==null || document.body.classList.contains('driving'))return;
+    if(event.originalEvent?._rahyarRoute||watch!==null)return;
+    if(coords.length&&!confirm('Choose a new destination on the map?'))return;
     setMapPinPicking(true);
     selectMapPin(event.lngLat || event.latlng);
   };

@@ -34,7 +34,7 @@ function recenterOnVehicle(){
 }
 function navigationFeatures(){return {type:'FeatureCollection',features:targets.filter(t=>t.coord&&facilityVisible(t)).map(t=>({type:'Feature',geometry:{type:'Point',coordinates:t.routeCoord||t.coord},properties:{name:t.name,kind:kindLabel(t),government:isGovernmentFacility(t)}}))}}
 function syncNavigationData(){
-  if(!navigationReady)return;
+  if(!navigationReady||!navigationMap.getSource('journey')||!navigationMap.getSource('stops'))return;
   const key=session+':'+routeRevision+':'+coords.length;
   if(navigationRouteRevision!==key){navigationRouteRevision=key;navigationMap.getSource('journey').setData(coords.length>1?{type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{}}:{type:'FeatureCollection',features:[]})}
   navigationMap.getSource('stops').setData(navigationFeatures());
@@ -139,7 +139,7 @@ function initNavigationMap(){
       if(firstStyle&&coords.length&&!mainMapBrowsing&&!document.body.classList.contains('driving'))fitNavigationRoute();
     });
     navigationMap.on('click','journey-stops',e=>{if(pickingMapPin)return;const f=e.features?.[0];if(!f)return;const label=document.createElement('div');label.textContent=f.properties.name+' · '+f.properties.kind;new maplibregl.Popup().setLngLat(f.geometry.coordinates).setDOMContent(label).addTo(navigationMap)});
-    navigationMap.on('webglcontextlost',()=>{host.hidden=true;$('map').hidden=false;$('map-render-status').textContent='2D fallback · Graphics context lost'});
+    navigationMap.on('webglcontextlost',e=>{e.originalEvent?.preventDefault?.();navigationReady=false;navigationFailed=true;host.hidden=true;$('map').hidden=false;map?.invalidateSize({pan:false});drawRoute();if(lastPos)drawPosition(lastPos);window.RahyarRouteOptions?.render();$('map-render-status').textContent='2D fallback · Graphics context lost; selected route preserved';});navigationMap.on('webglcontextrestored',()=>{navigationFailed=false;navigationMap.once('idle',()=>{navigationReady=true;host.hidden=false;$('map').hidden=true;navigationRouteRevision='';syncNavigationData();window.RahyarRouteOptions?.render();if(lastPos)followNavigationPosition(lastPos,true);});navigationMap.triggerRepaint();});
     let userMovingMap=false;
     navigationMap.on('movestart',event=>{
       if(!event.originalEvent)return;

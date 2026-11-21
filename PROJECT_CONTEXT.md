@@ -45,3 +45,8 @@ Existing Vercel project `rahyar` is configured as a static classic app with Node
 ## Verification discipline
 
 Run `npm run verify` after edits. Opt-in live and two-context browser tests use dedicated accounts via an external credentials file, never real drivers. Browser GPS/route fixtures are emulated; physical iPad/iPhone Safari, actual road legality, and audibility are not claimed as tested. Keep explicit blockers and costs in `docs/RELEASE_HANDOVER.md`.
+
+
+## 21 November 2026 — trip reports and protected sharing
+
+See [implementation, verification and rollback](docs/TRIP_REPORTS_20261121.md). New journal/admin/contact/share tables are additive and RLS protected. Owner account is invited but awaits email verification. Private journeys, actual GPS evidence, map route choices, date history, print/PDF/JSON, protected sharing and device/cloud persistence are integrated without changing the frontend framework. Public sharing remains blocked by Netlify account login; exact reported BC border/exit cases and physical Safari soak testing remain unverified.
