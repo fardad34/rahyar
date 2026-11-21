@@ -52,3 +52,15 @@ The security advisor reports no new RLS/definer warnings after hardening. The pr
 Pre-change Git bundle: `/workspace/work/backups/trip-journal-20261121/before.bundle`, original baseline/main/history included. Existing public data was exported privately to `public-data.json` in that directory (0600), parsed and hashed; credential fields were excluded. Existing schema is retained in the original migrations/Git backup. This is **not** a full backup of managed Auth secrets/sessions, Netlify settings or device-local media; those secrets were not exported.
 
 Revert only the preview to reviewed `2b3b717` to roll back frontend/API behavior. The new tables can remain without breaking the previous application. Preserve any newly collected journeys/shares; do not drop tables or delete the owner account during rollback. Any access revocation/data migration should be reviewed separately. Never force-push/merge main or unlock production as a recovery shortcut.
+
+## Running the checks locally
+
+Run `npm ci`, `npm run verify`, then `PORT=3046 npm run dev` with the existing publishable-only `.env.local` configuration. In another terminal:
+
+```sh
+BASE_URL=http://127.0.0.1:3046 node tests/integration/trip-journal.browser.cjs
+BASE_URL=http://127.0.0.1:3046 node tests/integration/map-places.browser.cjs
+BASE_URL=http://127.0.0.1:3046 npm run test:ui
+```
+
+These opt-in browser suites use real public routing/map services and emulated GPS; they are not provider load tests. `journal.rls.sql` is a rollback-only operator test requiring the existing synthetic staging identities and privileged SQL access; do not run it as an untrusted browser API. A journey already in progress when recording is first introduced is marked partial; unobserved earlier GPS cannot be reconstructed. Primary trip storage retains the original departure timestamp through app restoration.

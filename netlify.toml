@@ -42,3 +42,9 @@ for = "/*"
 X-Content-Type-Options = "nosniff"
 Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "camera=(), microphone=(self), geolocation=(self)"
+
+[[redirects]]
+from = "/api/shared-trip"
+to = "/.netlify/functions/shared-trip"
+status = 200
+force = true
