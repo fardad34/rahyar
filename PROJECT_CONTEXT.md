@@ -54,3 +54,7 @@ See [implementation, verification and rollback](docs/TRIP_REPORTS_20261121.md). 
 ## 21 November follow-up — completion review
 
 The authoritative current status is [request completion review](docs/REQUEST_COMPLETION_REVIEW_20261121.md); older dated notes above describe earlier states. Segmented and user-waypoint routing now retain up to three genuine full-route alternatives, keeping original legs, current truck dimensions and country filtering. Variants replace a single provider-routed section and are not an exhaustive corridor search. Report action controls follow the six-language selector. No database or production-access changes are included.
+
+## 22 November — road label and audio
+
+See [road/audio follow-up](docs/ROAD_LABEL_AUDIO_20261122.md). Fixed centered current-road slot, compact mandatory map attribution, reused audio settings in the map menu, persisted separate warning/speech volume, configurable warning tones and Safari speech start/error handling. No paid TTS or guarantee of untested device audibility. Previous user mute preferences remain respected.

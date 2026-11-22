@@ -122,7 +122,7 @@ function initNavigationMap(){
   if(!window.maplibregl){button.disabled=true;$('map-render-status').textContent='2D fallback · 3D map library unavailable';return}
   const host=document.createElement('div');host.id='navigation-map';host.setAttribute('aria-label','3D route map');$('map').after(host);
   try{
-    navigationMap=new maplibregl.Map({container:host,transformRequest:(url)=>typeof trafficTransformRequest==='function'?trafficTransformRequest(url):{url},style:navigationStyle(),center:[-100,50],zoom:4,pitch:60,maxPitch:70,attributionControl:{customAttribution:'Road markers © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'},antialias:false});
+    navigationMap=new maplibregl.Map({container:host,transformRequest:(url)=>typeof trafficTransformRequest==='function'?trafficTransformRequest(url):{url},style:navigationStyle(),center:[-100,50],zoom:4,pitch:60,maxPitch:70,attributionControl:{compact:true,customAttribution:'Road markers © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'},antialias:false});
     navigationMap.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-left');
     navigationMap.on('style.load',()=>{
       clearTimeout(navigationStyleTimer);

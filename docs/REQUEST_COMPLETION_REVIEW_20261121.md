@@ -88,3 +88,7 @@ Alternative labels are anchored only on a visible branch at least 24 screen pixe
 Regression tests cover expiration, redraw preservation, route reselection, common-road rejection and offscreen rejection. A real-provider/map browser test with emulated GPS and a controlled clock confirmed expiration after one minute without ending GPS or deleting route geometry. Physical Safari testing is still manual.
 
 Label follow-up validation: `npm run verify` passed **85 tests, 0 failures**; production-style build passed. The focused real-map/provider browser test confirmed the one-minute timeout and preservation of the active GPS/route. Tests explicitly cover both MapLibre and Leaflet fallback behavior.
+
+## 22 November: fixed road label and audio follow-up
+
+See [road-name/audio implementation and actual verification](ROAD_LABEL_AUDIO_20261122.md). Current-road name no longer follows the truck while panning; its two-line slot has fixed height. Map-menu audio controls include independent persisted speech/warning volumes, three warning sounds and Test buttons. Speech cues are acknowledged on playback start, not queue submission. Physical Safari audio remains unverified.
