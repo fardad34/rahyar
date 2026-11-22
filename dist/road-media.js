@@ -26,13 +26,14 @@
   let playbackTimer;
   let starting = false;
   let saveAttempt = 0;
+  let playbackWanted = false, playbackRevision = 0, navigationSpeechHolds = 0, navigationResumePending = false;
 
   function status(text) {
     for (const element of statuses) element.textContent = text;
   }
 
   function refreshControls() {
-    const playing = starting || !audio.paused;
+    const playing = starting || !audio.paused || ((navigationSpeechHolds > 0 || navigationResumePending) && playbackWanted);
     const action = playing ? 'Pause' : 'Play';
     quickToggle.disabled = !selectedMedia;
     quickToggle.firstElementChild.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor">'+(playing?'<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>':'<path d="m7 3 15 9-15 9z"/>')+'</svg>';
@@ -46,6 +47,7 @@
   }
 
   function pausePlayback() {
+    playbackWanted = false; navigationResumePending=false; ++playbackRevision;
     ++playAttempt;
     clearTimeout(playbackTimer);
     starting = false;
@@ -67,6 +69,7 @@
 
   function resumePlayback() {
     if (!selectedMedia) return;
+    playbackWanted = true;
     const {entry} = selectedMedia;
     const attempt = ++playAttempt;
     starting = true;
@@ -90,7 +93,7 @@
 
   function togglePlayback() {
     if (!selectedMedia) return;
-    if (starting || !audio.paused) {
+    if (starting || !audio.paused || ((navigationSpeechHolds > 0 || navigationResumePending) && playbackWanted)) {
       pausePlayback();
       status('Paused · ' + selectedMedia.entry.name);
     } else {
@@ -109,6 +112,30 @@
     audio.src = fileUrl || entry.url;
     resumePlayback();
   }
+
+  // Safari can pause HTML media when speech takes audio focus. Preserve user intent,
+  // not just volume, and never restart a replaced/explicitly paused/ended source.
+  window.RahyarMedia = {
+    beginNavigationSpeech() {
+      const revision=playbackRevision, source=audio.src;
+      const resumeWanted=playbackWanted && !!selectedMedia && (starting || !audio.paused || navigationSpeechHolds>0 || navigationResumePending);
+      ++navigationSpeechHolds;
+      let finished=false;
+      return () => {
+        if(finished)return;finished=true;
+        navigationSpeechHolds=Math.max(0,navigationSpeechHolds-1);
+        if(resumeWanted && playbackWanted && revision===playbackRevision && source===audio.src)navigationResumePending=true;
+        setTimeout(()=>{
+          if(navigationSpeechHolds)return;
+          navigationResumePending=false;
+          if(!resumeWanted || !playbackWanted || revision!==playbackRevision || source!==audio.src || audio.ended || !audio.paused)return;
+          // A single bounded attempt; autoplay denial needs another user gesture.
+          resumePlayback();
+        },150);
+        refreshControls();
+      };
+    }
+  };
 
   quickToggle.onclick = togglePlayback;
   audio.onplay = audio.onpause = refreshControls;

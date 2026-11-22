@@ -1,0 +1,19 @@
+'use strict';
+// Real UI/handlers, emulated Safari interruption and device voice inventory.
+const {chromium}=require('@playwright/test'),assert=require('node:assert/strict');
+(async()=>{const b=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});const p=await b.newPage({viewport:{width:1180,height:820}}),errors=[];p.on('pageerror',e=>errors.push(e.message));try{
+ await p.addInitScript(()=>{
+  const playing=new WeakMap();window.__plays=0;window.__voices=[{name:'Persian fixture',lang:'FA_ir'}];window.__speech=[];
+  Object.defineProperty(HTMLMediaElement.prototype,'paused',{get(){return !playing.get(this);}});
+  HTMLMediaElement.prototype.play=function(){window.__plays++;playing.set(this,true);this.dispatchEvent(new Event('play'));return Promise.resolve();};
+  HTMLMediaElement.prototype.pause=function(){playing.set(this,false);this.dispatchEvent(new Event('pause'));};
+  const speech=new EventTarget();Object.assign(speech,{getVoices:()=>window.__voices,resume(){},cancel(){},speak(u){window.__speech.push(u);u.onstart?.();document.getElementById('road-audio').pause();}});
+  Object.defineProperty(window,'speechSynthesis',{value:speech});Object.defineProperty(window,'SpeechSynthesisUtterance',{value:class{constructor(text){this.text=text;}}});
+ });
+ await p.goto(process.env.BASE_URL||'http://127.0.0.1:3056',{waitUntil:'domcontentloaded'});await p.locator('#notice-agree').check();await p.locator('#notice-confirm').click();await p.waitForSelector('#nav-shell');
+ await p.locator('[aria-label="Radio & media"]').click();await p.locator('[data-media-id="radio-0"]').first().click();await p.waitForFunction(()=>window.__plays===1);await p.locator('#nav-media-dialog [aria-label^="Close"]').click();
+ await p.locator('[aria-label="Voice guidance"]').click();await p.locator('#voice-language').selectOption('fa');assert.equal(await p.locator('#voice-choice option').first().textContent(),'Persian fixture · FA_ir');await p.locator('#test-voice').click();assert.equal(await p.evaluate(()=>$('road-audio').paused),true);assert.match(await p.evaluate(()=>window.__speech.at(-1).text),/راهنمای صوتی/);
+ await p.evaluate(()=>window.__speech.at(-1).onend());await p.waitForFunction(()=>window.__plays===2);assert.equal(await p.evaluate(()=>$('road-audio').paused),false);assert.equal(await p.evaluate(()=>$('road-audio').volume),1);console.log('PASS Persian alias selects exposed voice; Safari-style pause resumes radio after speech');
+ await p.locator('#test-voice').click();await p.locator('#nav-audio-dialog [aria-label^="Close"]').click();await p.locator('#dashboard-media-toggle').click({force:true});await p.evaluate(()=>window.__speech.at(-1).onend());await p.waitForTimeout(300);assert.equal(await p.evaluate(()=>window.__plays),2);assert.equal(await p.evaluate(()=>$('road-audio').paused),true);console.log('PASS explicit media pause during speech prevents unwanted restart');
+ await p.locator('[aria-label="Voice guidance"]').click();await p.evaluate(()=>{window.__voices=[];window.speechSynthesis.dispatchEvent(new Event('voiceschanged'));});assert.equal(await p.locator('#voice-choice').isDisabled(),true);assert.match(await p.locator('#voice-status').textContent(),/صدای فارسی در دسترس Safari نیست/);assert.deepEqual(errors,[]);console.log('PASS absent Persian voice is disclosed with installation guidance, never substituted with another language');
+}finally{await b.close();}})().catch(e=>{console.error(e.stack);process.exitCode=1;});

@@ -57,14 +57,20 @@ let navigationVoiceName='';
 let navigationVoiceVolume=1;
 let navigationSpeechRevision=0;
 let navigationRadioOriginalVolume=null;
+let navigationMediaRelease=null;
+function finishNavigationMedia(){const release=navigationMediaRelease;navigationMediaRelease=null;release?.();}
+function voiceLanguageCode(value){const code=String(value||'').trim().toLowerCase().replaceAll('_','-').split('-')[0];return ['fas','per'].includes(code)?'fa':code;}
+function navigationVoices(language=alertLanguage){return (window.speechSynthesis?.getVoices()||[]).filter(v=>voiceLanguageCode(v.lang)===language);}
+function missingNavigationVoice(locale){return alertLanguage==='fa'?'صدای فارسی در دسترس Safari نیست. در تنظیمات آیپد، Accessibility → Spoken Content (یا Read & Speak) → Voices، صدای Farsi/Persian را در صورت موجود بودن دانلود کنید؛ سپس به رهیار برگردید و Test Voice را بزنید. نصب صدا تضمین نمی‌کند Safari آن را ارائه کند.':'No installed '+locale+' voice is available. Choose another language or install a device voice. This language has not been verified on this device.';}
 function speakNavigationText(text,force=false,events={}) {
   if ((!spokenAlerts&&!force) || !window.speechSynthesis || !window.SpeechSynthesisUtterance || !text) return false;
   const locale=spokenDirections[alertLanguage].locale;
   const voices=window.speechSynthesis.getVoices();
-  const chosen=voices.find(v=>v.name===navigationVoiceName&&v.lang.startsWith(alertLanguage)) || voices.find(v=>v.lang===locale) || voices.find(v=>v.lang.startsWith(alertLanguage)) || (!voices.length&&alertLanguage==='en'?{name:'Device default English voice',lang:locale,system:true}:null);
-  if(!chosen){$('voice-status').textContent='No installed '+locale+' voice is available. Choose another language or install a device voice. This language has not been verified on this device.';return false;}
+  const chosen=voices.find(v=>v.name===navigationVoiceName&&voiceLanguageCode(v.lang)===alertLanguage) || voices.find(v=>v.lang===locale) || voices.find(v=>voiceLanguageCode(v.lang)===alertLanguage) || (!voices.length&&alertLanguage==='en'?{name:'Device default English voice',lang:locale,system:true}:null);
+  if(!chosen){$('voice-status').textContent=missingNavigationVoice(locale);return false;}
   const revision=++navigationSpeechRevision;
   window.speechSynthesis.cancel();
+  if(!navigationMediaRelease)navigationMediaRelease=window.RahyarMedia?.beginNavigationSpeech?.()||null;
   const utterance=new SpeechSynthesisUtterance(text);
   if(!chosen.system)utterance.voice=chosen;utterance.lang=chosen.lang;utterance.volume=navigationVoiceVolume;activeNavigationUtterance=utterance;
   utterance.onstart=()=>{voiceActivated=true;events.onStart?.();$('voice-status').textContent='Speaking · '+chosen.name;};
@@ -72,7 +78,7 @@ function speakNavigationText(text,force=false,events={}) {
   if(radio&&!radio.paused&&navigationRadioOriginalVolume===null)navigationRadioOriginalVolume=radio.volume;
   const volume=navigationRadioOriginalVolume;
   if(radio&&!radio.paused&&Number.isFinite(volume))try{radio.volume=Math.min(volume,.25);}catch{}
-  const restore=()=>{if(revision===navigationSpeechRevision){if(radio&&Number.isFinite(volume))try{radio.volume=volume;}catch{}navigationRadioOriginalVolume=null;}};
+  const restore=()=>{if(revision===navigationSpeechRevision){if(radio&&Number.isFinite(volume))try{radio.volume=volume;}catch{}navigationRadioOriginalVolume=null;finishNavigationMedia();}};
   const watchdog=setTimeout(()=>{restore();if(activeNavigationUtterance===utterance){activeNavigationUtterance=null;events.onError?.();$('voice-status').textContent='Speech did not finish. Tap Test Voice to reconnect audio.';}},20000);
   utterance.onend=()=>{clearTimeout(watchdog);restore();if(activeNavigationUtterance===utterance)activeNavigationUtterance=null;if(revision===navigationSpeechRevision)$('voice-status').textContent='Speech completed using '+chosen.name+'. Confirm audibility on your device.';};
   utterance.onerror=event=>{clearTimeout(watchdog);restore();events.onError?.();if(activeNavigationUtterance===utterance)activeNavigationUtterance=null;if(revision===navigationSpeechRevision&&!['canceled','interrupted'].includes(event.error))$('voice-status').textContent='Speech failed. Tap Test Voice, check installed voices and Safari sound settings.';};
@@ -131,17 +137,17 @@ function initNavigationAlerts() {
   const voices=$('voice-choice'),volume=$('voice-volume');
   function refreshVoiceList(){
     if(!voices)return;
-    const available=window.speechSynthesis?.getVoices().filter(v=>v.lang.startsWith(alertLanguage))||[];
-    voices.replaceChildren(...available.map(v=>new Option(v.name+' · '+v.lang,v.name)));
+    const available=navigationVoices();
+    voices.replaceChildren(...(available.length?available.map(v=>new Option(v.name+' · '+v.lang,v.name)):[new Option(alertLanguage==='fa'?'صدای فارسی در Safari پیدا نشد':'No matching voice available','')]));
     voices.disabled=!available.length;
     if(available.some(v=>v.name===navigationVoiceName))voices.value=navigationVoiceName;
-    $('voice-status').textContent=available.length?'Voice installed. Use Test Voice to check audibility.':alertLanguage==='en'?'Voice list is not ready. Test Voice can request the device default English voice; audibility is not confirmed.':'No matching device voice found; this language is unavailable on this device.';
+    $('voice-status').textContent=available.length?'Voice installed. Use Test Voice to check audibility.':alertLanguage==='en'?'Voice list is not ready. Test Voice can request the device default English voice; audibility is not confirmed.':missingNavigationVoice(spokenDirections[alertLanguage].locale);
   }
   if(voices)voices.onchange=()=>{navigationVoiceName=voices.value;try{localStorage.setItem('rahyar.voiceName',navigationVoiceName);}catch{}};
   if(volume){volume.value=navigationVoiceVolume;volume.oninput=()=>{navigationVoiceVolume=Number(volume.value);try{localStorage.setItem('rahyar.voiceVolume',String(navigationVoiceVolume));}catch{}};}
-  if($('test-voice'))$('test-voice').onclick=()=>{unlockNavigationAudio();window.speechSynthesis?.resume();speakNavigationText(spokenDirections[alertLanguage].enabled,true);};
+  if($('test-voice'))$('test-voice').onclick=()=>{refreshVoiceList();unlockNavigationAudio();window.speechSynthesis?.resume();speakNavigationText(spokenDirections[alertLanguage].enabled,true);};
   window.speechSynthesis?.addEventListener('voiceschanged',refreshVoiceList);refreshVoiceList();
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&spokenAlerts){window.speechSynthesis?.resume();unlockNavigationAudio();}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refreshVoiceList();if(spokenAlerts){window.speechSynthesis?.resume();unlockNavigationAudio();}}});
   document.addEventListener('click', () => {
     if (watch !== null && navigationAudio?.state !== 'running') unlockNavigationAudio();
     if(spokenAlerts&&window.speechSynthesis?.paused)window.speechSynthesis.resume();
@@ -205,6 +211,6 @@ function mappedSpeedAnnouncement(limit,unit,distance,language=alertLanguage) {
 function setNavigationVoiceEnabled(enabled,gesture=false){
  spokenAlerts=enabled===true;try{localStorage.setItem('rahyar.voiceEnabled',String(spokenAlerts));}catch{}
  if(spokenAlerts&&gesture){unlockNavigationAudio();window.speechSynthesis?.resume();speakNavigation('enabled');}
- else if(!spokenAlerts){window.speechSynthesis?.cancel();activeNavigationUtterance=null;pendingNavigationCues.clear();}
+ else if(!spokenAlerts){++navigationSpeechRevision;window.speechSynthesis?.cancel();activeNavigationUtterance=null;pendingNavigationCues.clear();const radio=$('road-audio');if(radio&&Number.isFinite(navigationRadioOriginalVolume))try{radio.volume=navigationRadioOriginalVolume;}catch{}navigationRadioOriginalVolume=null;finishNavigationMedia();}
  window.rahyarUpdateVoiceControls?.();
 }
