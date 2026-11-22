@@ -62,3 +62,7 @@ See [road/audio follow-up](docs/ROAD_LABEL_AUDIO_20261122.md). Fixed centered cu
 ## 22 November — learned corridor default
 
 See [corridor preferences](docs/CORRIDOR_PREFERENCES_20261122.md): immediate account/device-scoped route-choice anchors, current-profile/avoidance revalidation as first default, retained other alternatives, merged city-bridge option recovery and bounded generic diversification. No new provider/project/database. Exact Calgary full north/south/22X alternatives are explicitly incomplete, despite genuine multiple returned shapes.
+
+## 22 November — upcoming corridors
+
+See [nearby-corridor handover](docs/UPCOMING_CORRIDORS_20261122.md). Background proposals target the upcoming driving window, preserve the active route, reuse native shape vertices/profile for suffix estimates, refine actual forward road points, persist choices/gating, and reject stale results/selections. Nearby overview clears camera padding; labels sample visible branches. A genuine PTH 101 North reference option is verified; exact user address/profile, all-country/city coverage and physical Safari remain unverified. No database/main/production-access changes.

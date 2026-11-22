@@ -96,3 +96,7 @@ See [road-name/audio implementation and actual verification](ROAD_LABEL_AUDIO_20
 ## 22 November: immediate choice memory and corridor discovery
 
 See [corridor preference follow-up](CORRIDOR_PREFERENCES_20261122.md). Explicit route choice can now become the freshly revalidated default on a subsequent similar trip while alternatives remain. Merged city-bypass alternatives are retained and bounded generic discovery can seek missing options. **Exact Calgary full north/central/south–22X coverage is still not verified**; three returned full-route shapes alone do not complete that requirement.
+
+## 22 November: genuine nearby bypass discovery
+
+[Upcoming-corridor implementation and Winnipeg evidence](UPCOMING_CORRIDORS_20261122.md): real PTH 101 North now appears in the representative west-Winnipeg→Nipigon test, with the current route preserved until selection. Discovery focuses on the nearby driving window, handles giant maneuvers and wrong-carriageway correlation, and samples visible city geometry for labels. This is generic logic, not a Winnipeg exception. Exact user address/profile and universal city/country coverage are still not verified.

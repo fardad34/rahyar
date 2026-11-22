@@ -146,3 +146,48 @@ function distinctVehicleAlternatives(primary,candidates,count=2){
  while(remaining.length&&chosen.length<count){remaining.sort((a,b)=>Math.min(...known.map(s=>novel(b,s)))-Math.min(...known.map(s=>novel(a,s)))||a.duration-b.duration);const route=remaining.shift();chosen.push(route);known.push(segments(route));}
  return chosen;
 }
+
+// Seek alternatives in the upcoming driving window, then attach only the untouched
+// provider-routed suffix. A far-away difference must not stand in for an urban option.
+async function requestUpcomingCorridors(base,origin,request,{fromDistance=0,ahead=110000,maxAhead=180000,onDiagnostic=()=>{},roadCandidates=null,refineCandidate=null}={}){
+ if(!base||base.distance-fromDistance<maxAhead*1.2)return [];
+ let along=0,boundary=null;const legs=base.legs||[],prefix=[];
+ for(let leg=0;leg<legs.length;leg++){
+  const steps=legs[leg].steps||[],legEnd=along+steps.reduce((n,s)=>n+(s.distance||0),0);
+  if(legEnd<=fromDistance){along=legEnd;continue;}
+  for(let index=0;index<steps.length;index++){
+   const step=steps[index],line=step.geometry?.coordinates,before=along,prefixSize=prefix.length;
+   if(line?.length){for(const p of line)prefix.push(p);}
+   along+=step.distance||0;
+   // Providers may encode hundreds of kilometres as one maneuver. Use an actual
+   // shape vertex inside it; remaining time follows the existing per-step profile.
+   const target=fromDistance+ahead;
+   if(line?.length>2&&target>before&&target<along){
+    const distances=[0];for(let j=1;j<line.length;j++)distances.push(distances.at(-1)+hav(line[j-1],line[j]));
+    const wanted=(target-before)/(step.distance||1)*distances.at(-1);let cut=1;for(let j=1;j<line.length-1;j++)if(Math.abs(distances[j]-wanted)<Math.abs(distances[cut]-wanted))cut=j;
+    const fraction=distances[cut]/(distances.at(-1)||1),cutAt=before+(step.distance||0)*fraction;
+    if(cutAt-fromDistance>=Math.min(60000,ahead)&&cutAt-fromDistance<=maxAhead){
+     const clipped={...step,distance:step.distance*(1-fraction),duration:step.duration*(1-fraction),geometry:{type:'LineString',coordinates:line.slice(cut)},maneuver:{...step.maneuver,type:'notification',modifier:'straight',location:line[cut]}};delete clipped.exits;
+     boundary={leg,index:index+1,point:line[cut],incoming:line.slice(0,cut+1),reference:[...prefix.slice(0,prefixSize),...line.slice(0,cut+1)],tailSteps:[clipped,...steps.slice(index+1)],partial:true};break;
+    }
+   }
+   if(along-fromDistance>=Math.min(60000,ahead)&&along-fromDistance<=maxAhead&&index+1<steps.length&&line?.length>1){boundary={leg,index:index+1,point:line.at(-1),incoming:line,reference:[...prefix]};if(along-fromDistance>=ahead)break;}
+  }
+  break; // Do not skip an unpassed user waypoint to search the following leg.
+ }
+ if(!boundary){onDiagnostic({reason:'NoStepBoundary'});return [];}
+ const source={geometry:{coordinates:boundary.reference}},local=[...await request([origin,boundary.point],{via:false})];let roads=[];if(roadCandidates){try{roads=(await roadCandidates(origin,boundary.point)).slice(0,2);}catch{roads=[];}for(const road of roads){try{const options=await request([origin,road.coord,boundary.point],{via:true,probe:road.probe?road:null});if(refineCandidate){const actual=options[0]&&refineCandidate(options[0],origin,boundary.point,road.side);if(actual)local.push(...await request([origin,actual.coord,boundary.point],{via:true}));}else local.push(...options);}catch{/* Optional side corridor unavailable; retain other genuine options. */}}}const candidates=[],stats={roadCandidates:roads.map(r=>({ref:r.ref,name:r.name,side:r.side})),received:local.length,endpointRejected:0,directionRejected:0,sharedRejected:0,joinRejected:0};
+ const compact=line=>line.filter((p,i)=>i===0||hav(line[i-1],p)>.01);const reference=compact(boundary.reference),baseline=fromDistance<1?local.find(r=>{const line=compact(r.geometry?.coordinates||[]);return Number.isFinite(base.duration)&&base.duration>=r.duration&&base.distance>=r.distance&&line.length===reference.length&&line.every((p,i)=>hav(p,reference[i])<.5);}):null;stats.baselineCalibrated=!!baseline;
+ const stepRoute=steps=>{const coordinates=[];for(const step of steps){const line=step.geometry?.coordinates;if(!line?.length)return null;for(const p of line){if(!coordinates.length||hav(coordinates.at(-1),p)>.01)coordinates.push(p);}}return {geometry:{type:'LineString',coordinates},distance:steps.reduce((n,s)=>n+(s.distance||0),0),duration:steps.reduce((n,s)=>n+(s.duration||0),0),legs:[{steps:[...steps]}]};};
+ const incoming=line=>{const b=line.at(-1);for(let i=line.length-2;i>=0;i--)if(hav(line[i],b)>5)return [line[i],b];return null;};
+ const aligned=(a,b)=>{const x=incoming(a),y=incoming(b);if(!x||!y)return false;const scale=Math.cos(x[1][1]*Math.PI/180),dx=(x[1][0]-x[0][0])*scale,dy=x[1][1]-x[0][1],ex=(y[1][0]-y[0][0])*scale,ey=y[1][1]-y[0][1];return (dx*ex+dy*ey)/(Math.hypot(dx,dy)*Math.hypot(ex,ey)||1)>.5;};
+ for(const route of local){
+  const line=route.geometry?.coordinates;if(!line?.length||hav(line.at(-1),boundary.point)>.5){stats.endpointRejected++;continue;}if(!aligned(line,boundary.incoming)){stats.directionRejected++;continue;}
+  const memory=typeof window!=='undefined'?window.RahyarRouteMemory:null;if(memory&&!memory.different(route,source)){stats.sharedRejected++;continue;}
+  const sections=[{route,leg:0}],tail=stepRoute(boundary.tailSteps||legs[boundary.leg].steps.slice(boundary.index));if(!tail)continue;sections.push({route:tail,leg:0});
+  let valid=true;for(let i=boundary.leg+1;i<legs.length;i++){const next=stepRoute(legs[i].steps||[]);if(!next){valid=false;break;}sections.push({route:next,leg:i-boundary.leg});}if(!valid)continue;
+  if(baseline&&boundary.partial){const expectedDistance=base.distance-baseline.distance,expectedTime=base.duration-baseline.duration,totalDistance=sections.slice(1).reduce((n,p)=>n+p.route.distance,0),totalTime=sections.slice(1).reduce((n,p)=>n+p.route.duration,0),first=tail.legs[0].steps[0],distance=first.distance+expectedDistance-totalDistance,duration=first.duration+expectedTime-totalTime;if(distance>=0&&duration>=0){tail.legs[0].steps[0]={...first,distance,duration};tail.distance+=expectedDistance-totalDistance;tail.duration+=expectedTime-totalTime;}}
+  const full=joinVehicleSections(sections,legs.length-boundary.leg);if(full)candidates.push({...full,localCorridor:true,partialStepEstimate:boundary.partial===true&&!baseline});else stats.joinRejected++;
+ }
+ onDiagnostic(stats);return candidates;
+}

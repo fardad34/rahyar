@@ -71,7 +71,7 @@
  };
  $('delete-offline').onclick=async()=>{
   if(!confirm('Delete this saved route and offline app cache? Media and other saved places will be preserved.'))return;
-  try{localStorage.removeItem(fallbackKey);}catch{}await transaction('readwrite',s=>s.delete('last'));snapshot=null;
+  try{localStorage.removeItem(fallbackKey);}catch{}await transaction('readwrite',s=>s.delete('last'));snapshot=null;window.RahyarLocalCorridors?.reset();
   for(const name of await caches.keys())if(name.startsWith('rahyar-offline-'))await caches.delete(name);
   if(gpsWatch!==null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}render();$('offline-status').textContent='Saved route and offline app cache deleted.';
  };
@@ -88,7 +88,7 @@
    progress=Math.max(0,Math.min(routeLength,snapshot.progress||0));const departureTime=new Date(snapshot.departure?.time||snapshot.savedAt);tripDeparture={place:snapshot.departure?.place||{coord:snapshot.origin},time:Number.isFinite(departureTime.getTime())?departureTime:new Date()};activeTruckProfile=snapshot.profile;
    pendingVia=snapshot.via||null;
    if([...$('route-via').options].some(o=>o.value===snapshot.viaValue)){$('route-via').value=snapshot.viaValue;updateViaLabel();}
-   displayRouteChoices(snapshot.alternatives?.length?snapshot.alternatives:[snapshot.route],snapshot.selectedChoice||0);setTargets(snapshot.cities?.length?snapshot.cities:known);drawRoute();
+   displayRouteChoices(snapshot.alternatives?.length?snapshot.alternatives:[snapshot.route],snapshot.selectedChoice||0);activeNavigationRoute=routeChoices[snapshot.selectedChoice||0]||snapshot.route;setTargets(snapshot.cities?.length?snapshot.cities:known);drawRoute();
    $('route-type').textContent='Saved route preview · Revalidate before driving';
    $('map-status').textContent='Saved origin → '+snapshot.destination.name+' · GPS tracking is off';
    $('start').textContent='Start & revalidate saved route';

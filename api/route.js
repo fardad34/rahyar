@@ -3,7 +3,11 @@
 const limits={height:[.1,10],width:[.1,10],length:[.1,100],weight:[.1,200],axle_load:[.1,40],axle_count:[1,30],use_truck_route:[0,1],use_highways:[0,1],hgv_no_access_penalty:[0,43200],country_crossing_penalty:[0,43200]};
 function validate(body){
  if(!body||!['auto','truck'].includes(body.costing)||!Array.isArray(body.locations)||body.locations.length<2||body.locations.length>16)throw Error('Invalid vehicle or waypoints');
- const locations=body.locations.map(p=>{if(!Number.isFinite(p.lon)||!Number.isFinite(p.lat)||Math.abs(p.lon)>180||Math.abs(p.lat)>90)throw Error('Invalid coordinates');const safe={lon:p.lon,lat:p.lat};if(Number.isFinite(p.heading)&&p.heading>=0&&p.heading<360){safe.heading=p.heading;safe.heading_tolerance=45;}if(p.type==='through')safe.type='through';return safe;});
+ const locations=body.locations.map(p=>{if(!Number.isFinite(p.lon)||!Number.isFinite(p.lat)||Math.abs(p.lon)>180||Math.abs(p.lat)>90)throw Error('Invalid coordinates');const safe={lon:p.lon,lat:p.lat};if(Number.isFinite(p.heading)&&p.heading>=0&&p.heading<360){safe.heading=p.heading;safe.heading_tolerance=45;}if(p.type==='through')safe.type='through';
+ if(p.radius!==undefined){if(!Number.isFinite(p.radius)||p.radius<0||p.radius>5000)throw Error('Invalid search radius');safe.radius=p.radius;}
+ if(p.search_cutoff!==undefined){if(!Number.isFinite(p.search_cutoff)||p.search_cutoff<0||p.search_cutoff>15000)throw Error('Invalid search cutoff');safe.search_cutoff=p.search_cutoff;}
+ if(p.search_filter!==undefined){const f=p.search_filter;if(!f||typeof f!=='object'||f.min_road_class!=='trunk'||f.max_road_class!=='motorway'||f.exclude_restricted!==true||f.exclude_ramp!==true||Object.keys(f).length!==4)throw Error('Invalid road search filter');safe.search_filter={min_road_class:'trunk',max_road_class:'motorway',exclude_restricted:true,exclude_ramp:true};}
+ return safe;});
  const options=body.costing_options?.[body.costing]||{},safe={};
  for(const [key,value]of Object.entries(options)){if(key==='hazmat'){if(typeof value!=='boolean')throw Error('Invalid cargo');safe.hazmat=value;continue;}if(!limits[key]||!Number.isFinite(value)||value<limits[key][0]||value>limits[key][1])throw Error('Invalid vehicle configuration');safe[key]=value;}
  if(body.costing==='truck'&&!['height','width','length','weight','axle_load','axle_count'].every(key=>Number.isFinite(safe[key])))throw Error('Truck dimensions are required');

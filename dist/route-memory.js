@@ -6,8 +6,9 @@
  function gap(p,line){let best=Infinity;const x=111195*Math.cos(p[1]*Math.PI/180),y=111195;for(let i=1;i<line.length;i++){const ax=(line[i-1][0]-p[0])*x,ay=(line[i-1][1]-p[1])*y,dx=(line[i][0]-line[i-1][0])*x,dy=(line[i][1]-line[i-1][1])*y,t=Math.max(0,Math.min(1,-(ax*dx+ay*dy)/(dx*dx+dy*dy||1)));best=Math.min(best,Math.hypot(ax+t*dx,ay+t*dy));}return best;}
  function anchors(route,others=[]){
   const line=route.geometry?.coordinates||[];if(line.length<2||!line.every(valid))return [];
+  const travelled=[0];for(let i=1;i<line.length;i++)travelled.push(travelled.at(-1)+meters(line[i-1],line[i]));
   const candidates=[],stride=Math.max(1,Math.floor(line.length/300));
-  for(let i=1;i<line.length-1;i+=stride){const p=line[i];if(meters(line[0],p)<1000||meters(line.at(-1),p)<1000)continue;const score=Math.max(0,...others.filter(r=>r!==route).map(r=>gap(p,r.geometry.coordinates)));candidates.push({p,i,score});}
+  for(let i=1;i<line.length-1;i+=stride){if(route.localCorridor&&travelled[i]>180000)break;const p=line[i];if(meters(line[0],p)<1000||meters(line.at(-1),p)<1000)continue;const score=Math.max(0,...others.filter(r=>r!==route).map(r=>gap(p,r.geometry.coordinates)));candidates.push({p,i,score});}
   const groups=[];let group=[];for(const item of candidates){if(item.score>=120)group.push(item);else if(group.length){groups.push(group);group=[];}}if(group.length)groups.push(group);
   const ranked=groups.sort((a,b)=>Math.max(...b.map(c=>c.score))-Math.max(...a.map(c=>c.score))).slice(0,4),chosen=[];
   for(const rows of ranked){const fractions=ranked.length===1?[.2,.5,.8]:ranked.length===2?[.25,.75]:[.5];for(const f of fractions){const item=rows[Math.round((rows.length-1)*f)];if(chosen.every(c=>meters(c.p,item.p)>500))chosen.push(item);if(chosen.length===4)break;}if(chosen.length===4)break;}
@@ -22,6 +23,6 @@
  if(typeof module!=='undefined'&&module.exports){module.exports=api;return;}
  const key=()=> 'rahyar.routePreferences.v1.'+(root.RahyarCloud?.user?.id||'guest');
  function read(){try{const value=JSON.parse(localStorage.getItem(key())||'[]');return Array.isArray(value)?value:[];}catch{return [];}}
- root.RahyarRouteMemory={...api,find:c=>read().find(p=>matches(p,c))||null,remember(route,routes,c){try{const p=create(route,routes,c);if(!p)return false;localStorage.setItem(key(),JSON.stringify([p,...read().filter(row=>!matches(row,c))].slice(0,100)));return true;}catch{return false;}},clear(){try{localStorage.removeItem(key());}catch{}}};
+ root.RahyarRouteMemory={...api,find:c=>read().find(p=>matches(p,c))||null,remember(route,routes,c){try{if(route.preferred&&read().some(p=>matches(p,c)))return true;const p=create(route,routes,c);if(!p)return false;localStorage.setItem(key(),JSON.stringify([p,...read().filter(row=>!matches(row,c))].slice(0,100)));return true;}catch{return false;}},clear(){try{localStorage.removeItem(key());}catch{}}};
  const init=()=>{const host=document.getElementById('app-settings');if(!host)return;const b=document.createElement('button');b.type='button';b.className='secondary';b.dataset.rahyarText='';b.dataset.originalLabel='Forget route preferences';b.textContent=root.rahyarText?.('Forget route preferences')||'Forget route preferences';b.onclick=()=>{if(confirm('Forget learned route preferences on this account/device? Saved trips and destinations remain.'))root.RahyarRouteMemory.clear();};host.append(b);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })(typeof window!=='undefined'?window:globalThis);

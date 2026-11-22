@@ -61,7 +61,7 @@ let routeViaPlace=null;
 const CITY_CORRIDOR_METERS=16000;
 const CITY_CENTER_FALLBACK_METERS=900;
 let activeCityBoundaries=new Map(),activeCitySamples=[];
-let customVia=null, routeChoices=[], selectedAlternative=false;
+let customVia=null, routeChoices=[], selectedAlternative=false,activeNavigationRoute=null;
 
 function routeOptionLabel(route,index) {
   const minutes=Math.round(route.duration/60);
@@ -98,6 +98,9 @@ function rememberRoutePreference(route){if(dest&&route)window.RahyarRouteMemory?
 function chooseRoute(index) {
   const route=routeChoices[index];
   if(!route||routeBusy||isDemo)return;
+  if(route.localCorridor&&watch!==null&&lastPos&&window.RahyarRouteMemory?.gap(lastPos,route.geometry.coordinates)>Math.max(60,Number.isFinite(lastAccuracyMeters)?lastAccuracyMeters*2:60)&&!(progress<150&&hav(lastPos,route.geometry.coordinates[0])<150)){
+    message('Your position changed. Checking nearby alternatives again; the active route is retained.',true);window.RahyarLocalCorridors?.discover({force:true,manual:true}).catch(()=>{});return;
+  }
   rememberRoutePreference(route);
   selectedAlternative=true;
   displayRouteChoices(routeChoices,index);
@@ -301,6 +304,7 @@ async function discoverCities(token,revision=routeRevision){
   message(failures?(hasCatalog?"Cities loaded from the regional database. Additional online town details are unavailable.":"Some city information could not be loaded. Use Retry to complete the list."):"All identified cities on your route to "+dest.name+" are listed in route order.");
 }
 function activateRoute(route,via,c,token) {
+  activeNavigationRoute=route;
   window.RahyarJournal?.routeSelected(route,guidanceOffRoute?'off-route reroute':selectedAlternative?'driver selection':'provider');
   const revision=++routeRevision;
   prepare(route.geometry.coordinates,route.distance);
@@ -409,6 +413,7 @@ async function calculate(c,token,heading) {
     displayRouteChoices(routes,index);
     pendingVia=routes[index].highwayVia||routes[index].cityVia||via;
     activateRoute(routes[index],pendingVia,c,token);
+    window.RahyarLocalCorridors?.discover({force:true}).catch(()=>{});
   } catch(error) {
     if(token!==session)return;
     console.warn('Route loading failed',error);
@@ -472,6 +477,7 @@ function onPosition(p,token) {
   if(pendingVia&&viaRouteDistance!==null&&reliable&&progress>=viaRouteDistance-15){pendingVia=null;displayRouteChoices([])}
   if(confirmTripArrival(c,p.timestamp)){endTrip(true);return}
   refreshLiveProgress();
+  window.RahyarLocalCorridors?.discover().catch(()=>{});
 }
 function refreshLiveProgress() {
   const next=targets.find(t=>t.at>=progress-150&&facilityVisible(t));
@@ -485,6 +491,7 @@ function refreshLiveProgress() {
 }
 function stopWatch(){setScreenAwakeReason('trip',false);if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;session++;routeBusy=false;$('route-vehicle').disabled=false;displayRouteChoices([]);selectedAlternative=false;$('start').hidden=!dest;$('start').textContent=coords.length?'Resume trip':'Start saved trip';$('stop').hidden=true;$('trip-actions').hidden=!dest;updateRouteGuidance()}
 function endTrip(arrived=false){
+  window.RahyarLocalCorridors?.reset();activeNavigationRoute=null;
   window.RahyarJournal?.finish(arrived).catch(()=>{});
   window.rahyarSetTripIntent?.(false);
   stopWatch();

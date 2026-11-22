@@ -157,18 +157,18 @@ async function segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternat
   },{canadaOnly,alternativeCount:alternatives,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
   const {alternativeRoutes=[],...primary}=route;return [primary,...alternativeRoutes].slice(0,3);
 }
-async function vehicleRoutingRequest(request,timeout){
+async function vehicleRoutingRequest(request,timeout,purpose=''){
   // Same-origin gateway avoids client CORS/preflight and URL-size dependencies.
   // Retain the direct provider for static legacy hosting without Functions.
   if(typeof window!=='undefined'&&typeof document!=='undefined'){
-    try{return await getJSON('/api/route',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)},timeout??32000);}
+    try{return await getJSON('/api/route',{method:'POST',headers:{'Content-Type':'application/json',...(purpose==='local-corridor'?{'X-Rahyar-Request-Purpose':purpose}:{})},body:JSON.stringify(request)},timeout??32000);}
     catch(error){if(![404,405].includes(error.status))throw error;}
   }
   const url='https://valhalla1.openstreetmap.de/route?json='+encodeURIComponent(JSON.stringify(request));
   return getJSON(url,{headers:{'X-Client-Id':location.hostname}},timeout);
 }
 
-async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canadaOnly = false, through = false, segmenting = false,reserveExtra=null} = {}) {
+async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canadaOnly = false, through = false, segmenting = false,reserveExtra=null,localWindow=false,corridorProbe=null,requestPurpose=''} = {}) {
   const vehicle = activeRouteVehicle;
   if (vehicle === 'truck' && !activeTruckProfile) throw new Error('Truck profile is required');
   const costingOptions = vehicle === 'truck' ? {
@@ -189,12 +189,13 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
   if (through) {
     for (const waypoint of request.locations.slice(1, -1)) waypoint.type = 'through';
   }
+  if(corridorProbe){for(const location of request.locations.slice(1,-1)){location.radius=5000;location.search_cutoff=15000;location.search_filter={min_road_class:'trunk',max_road_class:'motorway',exclude_restricted:true,exclude_ramp:true};location.heading=corridorProbe.bearing;location.heading_tolerance=45;}}
   if (Number.isFinite(heading) && heading >= 0 && heading < 360) {
     request.locations[0].heading = Math.round(heading) % 360;
     request.locations[0].heading_tolerance = 45;
   }
   let result;
-  try { result = await vehicleRoutingRequest(request,timeout); }
+  try { result = await vehicleRoutingRequest(request,timeout,requestPurpose); }
   catch(error) {
     const canSplit=typeof requestSegmentedVehicleRoute==='function'&&typeof hav==='function';
     if(!segmenting&&canSplit&&(error.code==='DistanceExceeded'||error.errorCode===154||((error.name==='TimeoutError'||error.name==='TypeError'||error.status>=500)&&points.some((p,i)=>i>0&&hav(points[i-1],p)>150000))))return segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternatives);
@@ -205,7 +206,7 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
     Number.isFinite(route.distance) && Number.isFinite(route.duration) &&
     route.geometry?.coordinates?.length >= 2 && route.legs?.some(leg => leg.steps?.length)
   ).slice(0, 3);
-  if(typeof window!=='undefined'&&points.length===2&&alternatives>0&&valid.length&&valid.length<3&&(!segmenting||valid.length===1))return diversifyVehicleRoutes(request,valid,r=>vehicleRoutingRequest(r,Math.min(timeout??10000,10000)),reserveExtra,canadaOnly);
+  if(typeof window!=='undefined'&&points.length===2&&alternatives>0&&valid.length&&valid.length<3&&(!segmenting||valid.length===1||localWindow))return diversifyVehicleRoutes(request,valid,r=>vehicleRoutingRequest(r,Math.min(timeout??10000,10000),requestPurpose),reserveExtra,canadaOnly);
   return valid;
 }
 
