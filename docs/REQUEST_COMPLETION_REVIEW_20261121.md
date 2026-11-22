@@ -92,3 +92,7 @@ Label follow-up validation: `npm run verify` passed **85 tests, 0 failures**; pr
 ## 22 November: fixed road label and audio follow-up
 
 See [road-name/audio implementation and actual verification](ROAD_LABEL_AUDIO_20261122.md). Current-road name no longer follows the truck while panning; its two-line slot has fixed height. Map-menu audio controls include independent persisted speech/warning volumes, three warning sounds and Test buttons. Speech cues are acknowledged on playback start, not queue submission. Physical Safari audio remains unverified.
+
+## 22 November: immediate choice memory and corridor discovery
+
+See [corridor preference follow-up](CORRIDOR_PREFERENCES_20261122.md). Explicit route choice can now become the freshly revalidated default on a subsequent similar trip while alternatives remain. Merged city-bypass alternatives are retained and bounded generic discovery can seek missing options. **Exact Calgary full north/central/south–22X coverage is still not verified**; three returned full-route shapes alone do not complete that requirement.

@@ -6,12 +6,13 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
   const originCountry=typeof regionAt==='function'?regionAt(points[0])?.country:null;
   const northAmerica=originCountry?['CA','US'].includes(originCountry):null;
   const catalog=(await loadCatalog()).filter(c=>(!canadaOnly||c.country==='CA')&&(northAmerica===null||['CA','US'].includes(c.country)===northAmerica));
-  let requests=0;const memo=new Map();
+  let requests=0,extraRequests=0;const memo=new Map();
   const request=async pair=>{
     const key=JSON.stringify(pair);if(memo.has(key))return memo.get(key);
     if(++requests>maxRequests)throw Object.assign(new Error('Segment request budget exceeded'),{code:'SegmentBudgetExceeded'});
     onProgress(requests);
-    const result=await requestSingle(pair);memo.set(key,result);return result;
+    const reserveExtra=()=>{if(extraRequests>=4||requests>=maxRequests-8)return false;extraRequests++;requests++;onProgress(requests);return true;};
+    const result=await requestSingle(pair,reserveExtra);memo.set(key,result);return result;
   };
   function candidates(a,b){
     const direct=hav(a,b),middle=[(a[0]+b[0])/2,(a[1]+b[1])/2];
@@ -61,16 +62,16 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
     for(let i=0;i<pieces.length;i++){
       const base=pieces[i].route,line=base.geometry.coordinates;
       // Only substitute genuine provider alternatives for the exact same endpoints.
-      for(const options of memo.values())if(options.includes(base))for(const alt of options.slice(1)){
-        const shape=alt.geometry?.coordinates;
+      for(const options of memo.values())for(const candidate of options.slice(1)){
+        const alt=options.includes(base)?candidate:replaceProviderSection(base,options[0],candidate);
+        const shape=alt?.geometry?.coordinates;
         if(!shape?.length||hav(line[0],shape[0])>.5||hav(line.at(-1),shape.at(-1))>.5)continue;
         const selected=pieces.map((piece,j)=>({...piece,route:j===i?alt:piece.route}));
         const joined=joinVehicleSections(selected,originalLegs.length);
         if(joined)candidates.push(joined);
       }
     }
-    const seen=new Set([JSON.stringify(primary.geometry.coordinates)]);
-    primary.alternativeRoutes=candidates.sort((a,b)=>a.duration-b.duration).filter(r=>{const key=JSON.stringify(r.geometry.coordinates);if(seen.has(key))return false;seen.add(key);return true;}).slice(0,Math.min(2,alternativeCount));
+    primary.alternativeRoutes=distinctVehicleAlternatives(primary,candidates,Math.min(2,alternativeCount));
   }
   return primary;
 }
@@ -121,4 +122,27 @@ function joinVehicleSections(pieces,legCount){
  }
  for(const leg of legs){const end=leg.steps.findLastIndex(s=>s.maneuver?.type==='arrive');leg.steps=leg.steps.map((s,i)=>((s.maneuver?.type==='depart'&&i!==0)||(s.maneuver?.type==='arrive'&&i!==end))?{...s,maneuver:{...s.maneuver,type:'notification'}}:s);}
  return {geometry:{type:'LineString',coordinates},legs,distance:legs.reduce((n,l)=>n+l.distance,0),duration:legs.reduce((n,l)=>n+l.duration,0),segmented:true,segmentCount:pieces.length};
+}
+
+// Preserve local alternatives returned for a shortcut around an artificial split city.
+// Merged steps retain the original provider geometry objects, so replacements are exact.
+function replaceProviderSection(base,section,alternative){
+ const sectionSteps=(section?.legs||[]).flatMap(l=>l.steps||[]).filter(s=>s.distance>0);
+ const steps=(base.legs||[]).flatMap(l=>l.steps||[]);
+ if(!sectionSteps.length||sectionSteps.some(s=>!s.geometry?.coordinates?.length))return null;
+ const start=steps.findIndex(s=>s.geometry===sectionSteps[0].geometry),end=steps.findLastIndex(s=>s.geometry===sectionSteps.at(-1).geometry);
+ if(start<0||end<start)return null;
+ const a=section.geometry.coordinates,b=alternative.geometry?.coordinates;if(!b?.length||hav(a[0],b[0])>.5||hav(a.at(-1),b.at(-1))>.5)return null;
+ const fromSteps=list=>{const coordinates=[];for(const s of list){if(!s.geometry?.coordinates?.length)return null;for(const p of s.geometry.coordinates){if(!coordinates.length||hav(coordinates.at(-1),p)>.01)coordinates.push(p);}}return list.length?{geometry:{type:'LineString',coordinates},distance:list.reduce((n,s)=>n+(s.distance||0),0),duration:list.reduce((n,s)=>n+(s.duration||0),0),legs:[{steps:list}]}:null;};
+ const prefix=fromSteps(steps.slice(0,start)),suffix=fromSteps(steps.slice(end+1));
+ if(start>0&&!prefix||end<steps.length-1&&!suffix)return null;
+ return joinVehicleSections([prefix,alternative,suffix].filter(Boolean).map(route=>({route,leg:0})),1);
+}
+function distinctVehicleAlternatives(primary,candidates,count=2){
+ const key=p=>p[0].toFixed(5)+','+p[1].toFixed(5);
+ const segments=route=>{const line=route.geometry.coordinates,set=new Set();for(let i=1;i<line.length;i++)set.add(key(line[i-1])+'>'+key(line[i]));return set;};
+ const novel=(route,known)=>{const line=route.geometry.coordinates;let total=0;for(let i=1;i<line.length;i++)if(!known.has(key(line[i-1])+'>'+key(line[i])))total+=hav(line[i-1],line[i]);return total;};
+ const seen=new Set([JSON.stringify(primary.geometry.coordinates)]),remaining=candidates.filter(r=>{const k=JSON.stringify(r.geometry.coordinates);if(seen.has(k))return false;seen.add(k);return true;}),chosen=[],known=[segments(primary)];
+ while(remaining.length&&chosen.length<count){remaining.sort((a,b)=>Math.min(...known.map(s=>novel(b,s)))-Math.min(...known.map(s=>novel(a,s)))||a.duration-b.duration);const route=remaining.shift();chosen.push(route);known.push(segments(route));}
+ return chosen;
 }

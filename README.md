@@ -108,3 +108,5 @@ Latest Safari/UI follow-up, verification and remaining data limitations: [Safari
 Trip reporting, admin invitation, protected sharing, verification and remaining limits: [21 November update](docs/TRIP_REPORTS_20261121.md). Reports are under Settings or the main menu → Trip reports & sharing.
 
 Current request-by-request status, including incomplete requirements: [completion review](docs/REQUEST_COMPLETION_REVIEW_20261121.md). Long-route and waypoint alternatives retain genuine provider options; three are never invented when unavailable.
+
+Immediate route-choice memory, default revalidation and exact Calgary-corridor limitations: [corridor preference follow-up](docs/CORRIDOR_PREFERENCES_20261122.md).

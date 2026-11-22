@@ -1,6 +1,6 @@
 'use strict';
 // Fixed-provider routing gateway. No service keys, caller-supplied URLs, GPS logs or database writes.
-const limits={height:[.1,10],width:[.1,10],length:[.1,100],weight:[.1,200],axle_load:[.1,40],axle_count:[1,30],use_truck_route:[0,1],hgv_no_access_penalty:[0,43200],country_crossing_penalty:[0,43200]};
+const limits={height:[.1,10],width:[.1,10],length:[.1,100],weight:[.1,200],axle_load:[.1,40],axle_count:[1,30],use_truck_route:[0,1],use_highways:[0,1],hgv_no_access_penalty:[0,43200],country_crossing_penalty:[0,43200]};
 function validate(body){
  if(!body||!['auto','truck'].includes(body.costing)||!Array.isArray(body.locations)||body.locations.length<2||body.locations.length>16)throw Error('Invalid vehicle or waypoints');
  const locations=body.locations.map(p=>{if(!Number.isFinite(p.lon)||!Number.isFinite(p.lat)||Math.abs(p.lon)>180||Math.abs(p.lat)>90)throw Error('Invalid coordinates');const safe={lon:p.lon,lat:p.lat};if(Number.isFinite(p.heading)&&p.heading>=0&&p.heading<360){safe.heading=p.heading;safe.heading_tolerance=45;}if(p.type==='through')safe.type='through';return safe;});

@@ -94,9 +94,11 @@ function routeContinuity(route) {
   return score;
 }
 
+function rememberRoutePreference(route){if(dest&&route)window.RahyarRouteMemory?.remember(route,routeChoices,{origin:tripDeparture?.place?.coord||route.geometry.coordinates[0],destination:dest.coord,vehicle:activeRouteVehicle,profile:activeTruckProfile});}
 function chooseRoute(index) {
   const route=routeChoices[index];
   if(!route||routeBusy||isDemo)return;
+  rememberRoutePreference(route);
   selectedAlternative=true;
   displayRouteChoices(routeChoices,index);
   pendingVia=route.highwayVia||route.cityVia||null;
@@ -383,9 +385,11 @@ async function calculate(c,token,heading) {
     }
     const canadaOnly=startCountry==='CA'&&destinationCountry==='CA';
     const suggested=!via?bcHighwayOption(c,dest.coord):null;
-    const [routes,extra]=await Promise.all([
-      requestRoadRoutes(points,undefined,undefined,heading,canadaOnly),
+    const preference=!via&&!coords.length&&!guidanceOffRoute?window.RahyarRouteMemory?.find({origin:c,destination:dest.coord,vehicle:activeRouteVehicle,profile:activeTruckProfile}):null;
+    const [routes,extra,remembered]=await Promise.all([
+      requestRoadRoutes(points,undefined,undefined,heading,canadaOnly).catch(error=>{if(preference)return [];throw error;}),
       suggested?requestRoadRoutes([c,...suggested.points,dest.coord],0,15000,heading,canadaOnly).catch(()=>[]):[],
+      preference?requestRoadRoutes([c,...preference.points,dest.coord],0,undefined,heading,canadaOnly,{through:true}).catch(()=>[]):[],
     ]);
     if(token!==session)return;
     if(via?.points)for(const route of routes){route.highwayName=via.name;route.highwayVia=via}
@@ -398,8 +402,10 @@ async function calculate(c,token,heading) {
         if(alternate){alternate.highwayName=suggested.name;alternate.highwayVia=suggested;routes.push(alternate)}
       }
     }
-    if(!routes.length)throw Error('No route returned');
-    const index=preferredRouteIndex(routes);
+    if(!routes.length&&!remembered?.length)throw Error('No route returned');
+    if(routes.length>1)routes.splice(1,routes.length-1,...distinctVehicleAlternatives(routes[0],routes.slice(1),2));
+    if(remembered?.length){const preferred=window.RahyarRouteMemory.throughRoute(remembered[0]);const available=routes.filter(r=>window.RahyarRouteMemory.different(r,preferred)||window.RahyarRouteMemory.different(preferred,r));routes.splice(0,routes.length,preferred,...distinctVehicleAlternatives(preferred,available,2));}
+    const index=remembered?.length?0:preferredRouteIndex(routes);
     displayRouteChoices(routes,index);
     pendingVia=routes[index].highwayVia||routes[index].cityVia||via;
     activateRoute(routes[index],pendingVia,c,token);

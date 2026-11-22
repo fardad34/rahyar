@@ -58,3 +58,7 @@ The authoritative current status is [request completion review](docs/REQUEST_COM
 ## 22 November — road label and audio
 
 See [road/audio follow-up](docs/ROAD_LABEL_AUDIO_20261122.md). Fixed centered current-road slot, compact mandatory map attribution, reused audio settings in the map menu, persisted separate warning/speech volume, configurable warning tones and Safari speech start/error handling. No paid TTS or guarantee of untested device audibility. Previous user mute preferences remain respected.
+
+## 22 November — learned corridor default
+
+See [corridor preferences](docs/CORRIDOR_PREFERENCES_20261122.md): immediate account/device-scoped route-choice anchors, current-profile/avoidance revalidation as first default, retained other alternatives, merged city-bridge option recovery and bounded generic diversification. No new provider/project/database. Exact Calgary full north/south/22X alternatives are explicitly incomplete, despite genuine multiple returned shapes.
