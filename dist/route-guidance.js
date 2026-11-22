@@ -125,9 +125,12 @@ function updateRouteGuidance() {
   if (label.textContent !== instruction) label.textContent = instruction;
   $('focus-guidance-distance').textContent = distance;
   const road = $('focus-current-road');
-  road.textContent = currentRoad ? 'On ' + currentRoad : '';
+  road.textContent = currentRoadLabelText(currentRoad);
   road.hidden = !currentRoad;
   const icon = $('focus-guidance-symbol');
   icon.textContent = symbol;
   icon.hidden = !symbol;
 }
+
+// Road aliases/route references get a dedicated second line in the fixed slot.
+function currentRoadLabelText(road){return road?'On '+String(road).replace(/\s*[;·]\s*/, '\n'):'';}

@@ -58,30 +58,34 @@ let navigationVoiceVolume=1;
 let navigationSpeechRevision=0;
 let navigationRadioOriginalVolume=null;
 let navigationMediaRelease=null;
+let systemPersianConfirmed=false,systemPersianTrialCompleted=false;
 function finishNavigationMedia(){const release=navigationMediaRelease;navigationMediaRelease=null;release?.();}
 function voiceLanguageCode(value){const code=String(value||'').trim().toLowerCase().replaceAll('_','-').split('-')[0];return ['fas','per'].includes(code)?'fa':code;}
-function navigationVoices(language=alertLanguage){return (window.speechSynthesis?.getVoices()||[]).filter(v=>voiceLanguageCode(v.lang)===language);}
-function missingNavigationVoice(locale){return alertLanguage==='fa'?'صدای فارسی در دسترس Safari نیست. در تنظیمات آیپد، Accessibility → Spoken Content (یا Read & Speak) → Voices، صدای Farsi/Persian را در صورت موجود بودن دانلود کنید؛ سپس به رهیار برگردید و Test Voice را بزنید. نصب صدا تضمین نمی‌کند Safari آن را ارائه کند.':'No installed '+locale+' voice is available. Choose another language or install a device voice. This language has not been verified on this device.';}
+function voiceMatchesNavigationLanguage(voice,language){return voiceLanguageCode(voice.lang)===language || (language==='fa' && /^dariush(?:\s*\([^)]*\))?$/i.test(String(voice.name||'').trim()));}
+function navigationVoices(language=alertLanguage){return (window.speechSynthesis?.getVoices()||[]).filter(v=>voiceMatchesNavigationLanguage(v,language));}
+function confirmSystemPersianVoice(){if(!systemPersianTrialCompleted)return;systemPersianConfirmed=true;$('voice-status').textContent='صدای فارسی دستگاه را تأیید کردی؛ راهنمای فارسی برای این بار باز بودن برنامه فعال است.';const button=$('confirm-persian-voice');if(button)button.hidden=true;}
+
+function missingNavigationVoice(locale){return alertLanguage==='fa'?'مرورگر صدای فارسی را در فهرست ارائه نکرده؛ ممکن است Dariush روی آیپد نصب باشد. Test Voice را بزن تا صدای فارسی سیستم مستقیم امتحان شود. فقط اگر فارسی را درست شنیدی، آن را تأیید کن.':'No installed '+locale+' voice is available. Choose another language or install a device voice. This language has not been verified on this device.';}
 function speakNavigationText(text,force=false,events={}) {
   if ((!spokenAlerts&&!force) || !window.speechSynthesis || !window.SpeechSynthesisUtterance || !text) return false;
   const locale=spokenDirections[alertLanguage].locale;
   const voices=window.speechSynthesis.getVoices();
-  const chosen=voices.find(v=>v.name===navigationVoiceName&&voiceLanguageCode(v.lang)===alertLanguage) || voices.find(v=>v.lang===locale) || voices.find(v=>voiceLanguageCode(v.lang)===alertLanguage) || (!voices.length&&alertLanguage==='en'?{name:'Device default English voice',lang:locale,system:true}:null);
+  const chosen=voices.find(v=>v.name===navigationVoiceName&&voiceMatchesNavigationLanguage(v,alertLanguage)) || voices.find(v=>v.lang===locale) || voices.find(v=>voiceMatchesNavigationLanguage(v,alertLanguage)) || (alertLanguage==='fa'&&(force||systemPersianConfirmed)?{name:'System Persian (not listed)',lang:'fa-IR',system:true,persianTrial:!systemPersianConfirmed}:null) || (!voices.length&&alertLanguage==='en'?{name:'Device default English voice',lang:locale,system:true}:null);
   if(!chosen){$('voice-status').textContent=missingNavigationVoice(locale);return false;}
   const revision=++navigationSpeechRevision;
   window.speechSynthesis.cancel();
   if(!navigationMediaRelease)navigationMediaRelease=window.RahyarMedia?.beginNavigationSpeech?.()||null;
   const utterance=new SpeechSynthesisUtterance(text);
-  if(!chosen.system)utterance.voice=chosen;utterance.lang=chosen.lang;utterance.volume=navigationVoiceVolume;activeNavigationUtterance=utterance;
-  utterance.onstart=()=>{voiceActivated=true;events.onStart?.();$('voice-status').textContent='Speaking · '+chosen.name;};
+  if(!chosen.system)utterance.voice=chosen;utterance.lang=alertLanguage==='fa'?'fa-IR':chosen.lang.replaceAll('_','-');utterance.volume=navigationVoiceVolume;activeNavigationUtterance=utterance;
+  utterance.onstart=()=>{voiceActivated=true;events.onStart?.();$('voice-status').textContent=chosen.persianTrial?'درخواست پخش فارسی به سیستم ارسال شد؛ درست بودن زبان را پس از شنیدن تأیید کن.':'Speaking · '+chosen.name;};
   const radio=$('road-audio');
   if(radio&&!radio.paused&&navigationRadioOriginalVolume===null)navigationRadioOriginalVolume=radio.volume;
   const volume=navigationRadioOriginalVolume;
   if(radio&&!radio.paused&&Number.isFinite(volume))try{radio.volume=Math.min(volume,.25);}catch{}
   const restore=()=>{if(revision===navigationSpeechRevision){if(radio&&Number.isFinite(volume))try{radio.volume=volume;}catch{}navigationRadioOriginalVolume=null;finishNavigationMedia();}};
   const watchdog=setTimeout(()=>{restore();if(activeNavigationUtterance===utterance){activeNavigationUtterance=null;events.onError?.();$('voice-status').textContent='Speech did not finish. Tap Test Voice to reconnect audio.';}},20000);
-  utterance.onend=()=>{clearTimeout(watchdog);restore();if(activeNavigationUtterance===utterance)activeNavigationUtterance=null;if(revision===navigationSpeechRevision)$('voice-status').textContent='Speech completed using '+chosen.name+'. Confirm audibility on your device.';};
-  utterance.onerror=event=>{clearTimeout(watchdog);restore();events.onError?.();if(activeNavigationUtterance===utterance)activeNavigationUtterance=null;if(revision===navigationSpeechRevision&&!['canceled','interrupted'].includes(event.error))$('voice-status').textContent='Speech failed. Tap Test Voice, check installed voices and Safari sound settings.';};
+  utterance.onend=()=>{clearTimeout(watchdog);restore();if(activeNavigationUtterance===utterance)activeNavigationUtterance=null;if(revision===navigationSpeechRevision){$('voice-status').textContent=chosen.persianTrial?'آیا جمله را به فارسی درست شنیدی؟ فقط در این صورت دکمهٔ تأیید را بزن.':'Speech completed using '+chosen.name+'. Confirm audibility on your device.';if(chosen.persianTrial){systemPersianTrialCompleted=true;const button=$('confirm-persian-voice');if(button)button.hidden=false;}}};
+  utterance.onerror=event=>{clearTimeout(watchdog);restore();events.onError?.();if(activeNavigationUtterance===utterance)activeNavigationUtterance=null;if(revision===navigationSpeechRevision&&!['canceled','interrupted'].includes(event.error)){$('voice-status').textContent=alertLanguage==='fa'?'مرورگر درخواست صدای فارسی را رد کرد ('+String(event.error||'unknown')+'). نصب بودن Dariush در تنظیمات به معنی دسترسی مرورگر نیست.':'Speech failed. Tap Test Voice, check installed voices and browser sound settings.';if(chosen.system&&alertLanguage==='fa'){systemPersianTrialCompleted=false;systemPersianConfirmed=false;const button=$('confirm-persian-voice');if(button)button.hidden=true;}}};
   try{window.speechSynthesis.resume?.();window.speechSynthesis.speak(utterance);}catch{clearTimeout(watchdog);restore();activeNavigationUtterance=null;events.onError?.();$('voice-status').textContent='Speech blocked. Tap Test Voice in Voice & alert sound.';return false;}
   return true;
 }
@@ -120,6 +124,7 @@ function initNavigationAlerts() {
     alertLanguage = picker.value;
     try { localStorage.setItem('rahyar.voiceLanguage',alertLanguage); } catch {}
     $('voice-status').textContent = '';
+    const confirm=$('confirm-persian-voice');if(confirm)confirm.hidden=true;
     refreshVoiceList();
   };
   const buttons = [...document.querySelectorAll('[data-voice-toggle]')];
@@ -145,7 +150,7 @@ function initNavigationAlerts() {
   }
   if(voices)voices.onchange=()=>{navigationVoiceName=voices.value;try{localStorage.setItem('rahyar.voiceName',navigationVoiceName);}catch{}};
   if(volume){volume.value=navigationVoiceVolume;volume.oninput=()=>{navigationVoiceVolume=Number(volume.value);try{localStorage.setItem('rahyar.voiceVolume',String(navigationVoiceVolume));}catch{}};}
-  if($('test-voice'))$('test-voice').onclick=()=>{refreshVoiceList();unlockNavigationAudio();window.speechSynthesis?.resume();speakNavigationText(spokenDirections[alertLanguage].enabled,true);};
+  if($('test-voice'))$('test-voice').onclick=()=>{systemPersianTrialCompleted=false;const confirm=$('confirm-persian-voice');if(confirm)confirm.hidden=true;refreshVoiceList();unlockNavigationAudio();window.speechSynthesis?.resume();speakNavigationText(spokenDirections[alertLanguage].enabled,true);};
   window.speechSynthesis?.addEventListener('voiceschanged',refreshVoiceList);refreshVoiceList();
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refreshVoiceList();if(spokenAlerts){window.speechSynthesis?.resume();unlockNavigationAudio();}}});
   document.addEventListener('click', () => {
