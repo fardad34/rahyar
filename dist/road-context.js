@@ -52,7 +52,7 @@ function updateRegionPanel(){
   $('current-region').textContent=currentRegion?.name||(!lastPos?'Waiting for your location':regionFeatures.length?'Location outside mapped regions':'Loading province / state…');
   $('region-country').textContent=currentRegion?(currentRegion.country==='CA'?'CANADA · PROVINCE / TERRITORY':currentRegion.country==='US'?'UNITED STATES · STATE':'CURRENT COUNTRY'):'GPS + ROUTE';
   const next=currentRegion?borderCrossings.find(c=>c.at>progress-50&&c.from.code===currentRegion.code):null;
-  if(next){$('border-target').textContent='TO '+next.to.name.toUpperCase();$('border-distance').textContent=fa(roadDistance(next.at-progress));$('border-note').textContent='Approx. road distance to the boundary on this route.'}
+  if(next){const stale=watch!==null&&(!gpsTime||Date.now()-gpsTime>25000);$('border-target').textContent='TO '+next.to.name.toUpperCase();$('border-distance').textContent=stale?'—':fa(roadDistance(next.at-progress));$('border-note').textContent=stale?'Waiting for fresh GPS; previous border distance is not a live measurement.':'Approx. road distance to the boundary on this route.'}
   else{$('border-target').textContent='NEXT PROVINCE / STATE / COUNTRY';$('border-distance').textContent='—';$('border-note').textContent=!coords.length?'Start a trip to calculate the next boundary.':currentRegion?'No mapped province/state crossing before your destination.':'Boundary data or current location unavailable.'}
 
 }

@@ -98,12 +98,13 @@ function followCockpitPosition(c,resetZoom=false){
   followNavigationPosition(c,resetZoom);
   if(map&&cockpitMapFollow&&!$('map').hidden){
     const expanded=document.body.classList.contains('map-expanded');
-    const drop=Math.min(expanded?38:76,map.getSize().y*.19);
+    const frame=document.body.classList.contains('navigation-redesign')&&typeof rahyarCameraFrame==='function'?rahyarCameraFrame(map.getSize().x,map.getSize().y):null;
+    const drop=frame?frame.y-map.getSize().y/2:Math.min(expanded?38:76,map.getSize().y*.19);
     const autoZoom=typeof followingZoom==='function'?followingZoom():null;
     const zoom=autoZoom===null ? (resetZoom?17:map.getZoom()) : Math.round(autoZoom);
     const scale=map.getZoomScale(zoom);
     const position=map.latLngToContainerPoint([c[1],c[0]]);
-    const center=map.containerPointToLatLng(position.subtract([0,drop/scale]));
+    const center=map.containerPointToLatLng(position.subtract([frame?(frame.x-map.getSize().x/2)/scale:0,drop/scale]));
     if(resetZoom||zoom!==map.getZoom())map.setView(center,zoom,{animate:false});
     else map.panTo(center,{animate:true,duration:.35});
   }
@@ -115,6 +116,9 @@ function updateCockpitMapState(){
   $('focus-follow').title=cockpitMapFollow?'Following GPS':'Return to your vehicle';
 }
 function startCockpitLayout(){
+  if(document.body.classList.contains('navigation-redesign')){
+    document.body.classList.add('driving');cockpitMapFollow=true;focusRowsKey='';refreshFocusSummary(true);updateDrivingHud();updateRouteGuidance();setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress),true);},120);return;
+  }
   const region=document.querySelector('.region-panel'),mapPanel=document.querySelector('.map-panel');
   if(!regionHome){regionHome=document.createComment('region home');region.before(regionHome)}
   $('focus-region-footer').append(region);
@@ -125,6 +129,7 @@ function startCockpitLayout(){
   setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress),true)},100);
 }
 function stopCockpitLayout(){
+  if(document.body.classList.contains('navigation-redesign')){document.body.classList.remove('driving','map-expanded');resizeCockpitMap();return;}
   setFocusMapExpanded(false);
   $('dashboard-media').open=false;
   layoutFocusMapOverlays(false);
@@ -151,6 +156,7 @@ async function exitFocusFullscreen(){
 }
 function resizeCockpitMap(){setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress))},100);$('focus-fullscreen').textContent=fullscreenElement()?'Windowed view':'Full screen'}
 function layoutFocusMapOverlays(active) {
+  if(document.body.classList.contains('navigation-redesign'))return;
   const area = $('focus-map-area');
   const controls = area.querySelector('.focus-map-controls');
   const heading = area.querySelector('.map-heading');

@@ -48,10 +48,10 @@
   const incidentKey = 'rahyar.roadNotes';
   const recentIncidents = () => read(incidentKey).filter(note => note.expires > Date.now());
   const reportKinds = {
-    police: 'Police presence',
-    collision: 'Collision',
-    construction: 'Construction',
-    closed: 'Road closed',
+    police: 'police',
+    weigh: 'weigh',
+    construction: 'construction',
+    closed: 'closed',
   };
   const reportButtons = [...document.querySelectorAll('[data-report]')];
   const dashboardReportStatus = byId('dashboard-report-status');
@@ -61,32 +61,20 @@
     dashboardReportStatus.textContent = text;
   }
 
-  function saveReport(kind, coords) {
-    if (!Number.isFinite(coords?.latitude) || !Number.isFinite(coords?.longitude) ||
-        !Number.isFinite(coords.accuracy) || coords.accuracy > 100) {
-      reportStatus('GPS location is not accurate enough. Tap again when GPS is available.');
-      return;
-    }
-    const {latitude, longitude} = coords;
-    const note = {
-      kind,
-      place: latitude.toFixed(5) + ', ' + longitude.toFixed(5),
-      latitude,
-      longitude,
-      expires: Date.now() + 7200000,
-    };
-    if (save(incidentKey, [note, ...recentIncidents()].slice(0, 40), dashboardReportStatus)) {
-      reportStatus(kind + ' saved on this device.');
-    } else {
-      reportStatus('This browser could not save the report.');
-    }
+  async function saveReport(kind, position) {
+    try {
+      if(!window.RahyarCloud)throw Error('Shared reports unavailable.');
+      const result=await window.RahyarCloud.submit({category:kind,latitude:position.latitude,longitude:position.longitude,accuracy_m:position.accuracy,heading:Number.isFinite(position.heading)?position.heading:null});
+      reportStatus(result.queued?'Queued offline; will synchronize after reconnection.':'Report shared with other drivers.');
+    }catch(error){reportStatus(error.message);}
   }
 
   function reportIncident(kind) {
     if (locatingReport || !kind) return;
+    if(kind==='weigh'){window.rahyarOpenStationReport?.();return;}
     if (watch !== null && lastPos && Date.now() - gpsTime <= 10000 &&
         Number.isFinite(lastAccuracyMeters) && lastAccuracyMeters <= 100) {
-      saveReport(kind, {longitude:lastPos[0], latitude:lastPos[1], accuracy:lastAccuracyMeters});
+      saveReport(kind, {longitude:lastPos[0], latitude:lastPos[1], accuracy:lastAccuracyMeters,heading:gpsTravelHeading});
       return;
     }
     if (!navigator.geolocation) {
