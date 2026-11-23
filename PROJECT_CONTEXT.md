@@ -66,3 +66,7 @@ See [corridor preferences](docs/CORRIDOR_PREFERENCES_20261122.md): immediate acc
 ## 22 November — upcoming corridors
 
 See [nearby-corridor handover](docs/UPCOMING_CORRIDORS_20261122.md). Background proposals target the upcoming driving window, preserve the active route, reuse native shape vertices/profile for suffix estimates, refine actual forward road points, persist choices/gating, and reject stale results/selections. Nearby overview clears camera padding; labels sample visible branches. A genuine PTH 101 North reference option is verified; exact user address/profile, all-country/city coverage and physical Safari remain unverified. No database/main/production-access changes.
+
+## 23 November: completed audio/layout follow-up
+
+See [overall review, precise capabilities, tests and rollback](docs/AUDIO_LAYOUT_RELEASE_20261123.md). Persian basic now uses nine actual bundled synthetic prompts independent of browser voice installation; arbitrary road-name/number TTS remains unsupported by this fallback. The road label shrinks to its text and occupies the measured lower-map gap between docked trip sheet and milestone. It hides behind no full-width expanded panel. All changes remain on development PR #2; physical iPad output remains a manual check.

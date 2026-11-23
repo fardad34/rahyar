@@ -100,3 +100,7 @@ See [corridor preference follow-up](CORRIDOR_PREFERENCES_20261122.md). Explicit 
 ## 22 November: genuine nearby bypass discovery
 
 [Upcoming-corridor implementation and Winnipeg evidence](UPCOMING_CORRIDORS_20261122.md): real PTH 101 North now appears in the representative west-Winnipeg→Nipigon test, with the current route preserved until selection. Discovery focuses on the nearby driving window, handles giant maneuvers and wrong-carriageway correlation, and samples visible city geometry for labels. This is generic logic, not a Winnipeg exception. Exact user address/profile and universal city/country coverage are still not verified.
+
+## 23 November: actual Persian fallback and non-overlapping road slot
+
+[Overall review and executed verification](AUDIO_LAYOUT_RELEASE_20261123.md) supersedes the failed native-only Persian and fixed full-screen-center label approach. Fixed Persian audio is a real bundled basic fallback, not full arbitrary Persian TTS. Measured road-label placement, text-sized card, narrow-screen behavior, cancellation/error recovery and updated browser checks are documented with remaining limitations.

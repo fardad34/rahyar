@@ -11,7 +11,7 @@ Install Node.js 24 LTS, npm and Git. Clone into your own Projects folder, then o
 ```sh
 git clone https://github.com/fardad34/rahyar.git
 cd rahyar
-git switch feature/comprehensive-staging-20261117T052834Z
+git switch feature/navigation-redesign-20261118T130316Z
 npm ci
 ```
 
@@ -21,7 +21,7 @@ Copy `.env.example` to `.env.local` and obtain the URL and **publishable** key f
 npm run dev
 ```
 
-Open **http://localhost:3000**. The development server binds only to loopback, serves `dist/` and the three local API handlers, and does not expose `.git` or environment files. `predev` builds the new client and copies the same Leaflet 1.9.4 version locally. There is no hot reload; refresh after edits. `PORT=3001 npm run dev` changes the port on macOS/Linux; use `$env:PORT=3001; npm run dev` in PowerShell. Storage is per host/port/browser.
+Open **http://localhost:3000**. The development server binds only to loopback, serves `dist/` and the five local API handlers, and does not expose `.git` or environment files. `predev` builds the new client and copies the same Leaflet 1.9.4 version locally. There is no hot reload; refresh after edits. `PORT=3001 npm run dev` changes the port on macOS/Linux; use `$env:PORT=3001; npm run dev` in PowerShell. Storage is per host/port/browser.
 
 The existing Vercel project is `rahyar`, ID `prj_VWcZXiqXvf9CJLRqCsgr73fRqAlV`, team `team_PuUJOIzmcLUiNoqlGAdgDzLR`. Development and preview configuration are set there; production credentials are intentionally not configured. No duplicate project is required. `.vercel/` and `.env.local` are ignored.
 
@@ -112,3 +112,9 @@ Current request-by-request status, including incomplete requirements: [completio
 Immediate route-choice memory, default revalidation and exact Calgary-corridor limitations: [corridor preference follow-up](docs/CORRIDOR_PREFERENCES_20261122.md).
 
 Nearby bypass alternatives, PTH 101 North reference evidence, approximate tail ETA provenance and remaining limits: [upcoming-corridor follow-up](docs/UPCOMING_CORRIDORS_20261122.md).
+
+## Persian basic audio and road label release
+
+See [the review, limitations and verification](docs/AUDIO_LAYOUT_RELEASE_20261123.md). Persian basic uses nine bundled synthetic MP3 prompts (about 196 KiB), decoded through Web Audio without a browser Persian voice or external TTS. It does not read arbitrary road names, exit numbers or numerical speed limits. The native-device voice option remains available when exposed.
+
+Optional regeneration requires Python 3, eSpeak NG (Persian voice data) and ffmpeg: `python3 scripts/generate-persian-prompts.py`. These are not runtime dependencies and are not required for normal builds. Only generated audio and the phrase manifest ship with the app. Browser checks: `BASE_URL=http://127.0.0.1:3000 node tests/integration/speech-media.browser.cjs` and `BASE_URL=http://127.0.0.1:3000 node tests/integration/road-slot.browser.cjs`.

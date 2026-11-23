@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..', 'dist');
 const port = Number(process.env.PORT || 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be an integer from 1 to 65535');
-const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png'};
+const types = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.mp3':'audio/mpeg'};
 const server = http.createServer(async (req, res) => {
   if (req.url.split('?')[0] === '/api/config' || req.url.split('?')[0] === '/api/health' || req.url.split('?')[0] === '/api/ask' || req.url.split('?')[0] === '/api/route' || req.url.split('?')[0] === '/api/shared-trip') {
     res.status = code => { res.statusCode=code; return res; };
