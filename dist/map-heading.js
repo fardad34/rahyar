@@ -10,7 +10,8 @@ function resetMapHeading(){gpsTravelHeading=null;lastHeadingFix=null;mapDisplayH
 function recordGpsHeading(fix,coord){
   const now=Date.now(),accurate=Number.isFinite(fix.accuracy)&&fix.accuracy<=35;
   if(accurate&&Number.isFinite(fix.heading)&&fix.heading>=0&&fix.heading<360&&Number.isFinite(fix.speed)&&fix.speed>=1.5)gpsTravelHeading=fix.heading;
-  else if(accurate&&lastHeadingFix&&now-lastHeadingFix.time>=1000){const moved=hav(lastHeadingFix.coord,coord),elapsed=(now-lastHeadingFix.time)/1000;if(moved>=Math.max(8,fix.accuracy*.6)&&moved/elapsed>=1.5)gpsTravelHeading=bearingBetween(lastHeadingFix.coord,coord)}
+  else if(accurate&&lastHeadingFix&&now-lastHeadingFix.time>=1000){const moved=hav(lastHeadingFix.coord,coord),elapsed=(now-lastHeadingFix.time)/1000;
+    if(moved>=Math.max(8,fix.accuracy*.6)&&moved/elapsed>=1.5)gpsTravelHeading=bearingBetween(lastHeadingFix.coord,coord)}
   if(accurate&&(!lastHeadingFix||(now-lastHeadingFix.time>=1000&&hav(lastHeadingFix.coord,coord)>=8)))lastHeadingFix={coord:[...coord],time:now};
 }
 function updateCockpitBearing(){
@@ -21,5 +22,8 @@ function updateCockpitBearing(){
   if(target!==null){mapDisplayHeading=blendBearing(mapDisplayHeading,target);map.setBearing(-mapDisplayHeading)}
 }
 function initMapHeading(){
-  $('focus-orientation').onclick=()=>{mapHeadingUp=!mapHeadingUp;$('focus-orientation').textContent=mapHeadingUp?'Heading up':'North up';updateCockpitBearing();followNavigationPosition(lastPos||pointOnRoute(progress))};
+  $('focus-orientation').onclick=()=>{mapHeadingUp=!mapHeadingUp;
+    $('focus-orientation').textContent=mapHeadingUp?'Heading up':'North up';
+    updateCockpitBearing();
+    followNavigationPosition(lastPos||pointOnRoute(progress))};
 }

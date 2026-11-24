@@ -1,0 +1,13 @@
+# Stage 2 — navigation readability/input UX (24 November 2026)
+
+Branched from Stage 1, PR #3. Existing map-first shell, routes, radio/media, reports, themes, truck profiles and saved data remain. Six existing themes were audited, not reduced to the three in the initial brief. No new language was added.
+
+Browser audit: 390×844, 430×932 and 1180×820 across six themes (18 combinations), plus first-run notice, truck settings and actual Persian interface selector/RTL. Before: 216 repeated tiny-text findings and 360 undersized-target findings across those combinations. After: see the signed-off audit; findings describe measured visible elements, not every hidden state or physical readability certification. Screenshots and raw computed-size JSON are saved in the execution workspace.
+
+Body 16px, meaningful secondary text at least 14px, touch controls at least 48px, readable theme panel colors, scrollable control rail. The 48px sheet handle no longer consumes summary space; a compact landscape maneuver banner avoids covering the sheet. The original iPhone CSS hid Ask Rahyar, so its existing functional panel is now reachable from the main menu. No decorative replacement.
+
+Voice destination capture uses the available Web Speech recognition engine with language selection and explicit permission/network/unsupported errors. The browser may use an online recognition service; real iOS microphone behavior remains manual. Paste supports plain addresses and known map-link query/coordinates; no arbitrary URL is fetched, short links need a full address. Existing typing remains when parked/unknown; fresh reliable GPS movement makes the field read-only, leaving voice/paste/saved/map available. One-tap saved buttons use existing destination handlers and active-route confirmation. Existing recent/map-pick controls remain.
+
+Executed: 130 unit/regression tests, zero failed; syntax and build passed. Real-route navigation browser regression passed 1180×820, 390×844 and 844×390, gestures, map/maneuver/speed visibility, same-tab route/profile restoration and no page errors. Input browser tests passed emulated voice, unsupported fallback, clipboard parsing, saved selection and emulated GPS typing lock. No physical GPS/mic/road or six-device certification is claimed.
+
+شش دستگاه: روی هر دستگاه شماره ۱ تا ۶، مدل/مرورگر را ثبت کنید؛ خوانایی روشن/تاریک و حالت عمودی/افقی را بررسی کنید؛ مجوز میکروفن و خطای رد مجوز را امتحان کنید؛ مقصد ذخیره‌شده، چسباندن و انتخاب روی نقشه را بزنید؛ بین برنامه‌ها جابه‌جا شوید و حفظ سفر را بررسی کنید؛ مشکل را با عکس و نسخه گزارش کنید. تست تنظیمات هنگام توقف انجام شود.

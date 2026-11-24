@@ -3,7 +3,9 @@ let locatingPreview=false;
 function previewCurrentLocation(){
   if(!navigator.geolocation){updateGpsStatus('Location unavailable in this browser. You can still search for a destination.',true);return}
   if(locatingPreview||watch!==null)return;locatingPreview=true;const token=session;
-  $('current-location').textContent='Locating you…';if(!coords.length)$('map-status').textContent='Finding your location…';updateGpsStatus('Finding your current location. Allow Location when prompted.');
+  $('current-location').textContent='Locating you…';
+  if(!coords.length)$('map-status').textContent='Finding your location…';
+  updateGpsStatus('Finding your current location. Allow Location when prompted.');
   navigator.geolocation.getCurrentPosition(async p=>{
     locatingPreview=false;if(token!==session||isDemo||watch!==null)return;
     lastPos=[p.coords.longitude,p.coords.latitude];gpsTime=Date.now();lastAccuracyMeters=p.coords.accuracy;lastSpeedMps=null;updateGpsStatus('Current location ready · Accuracy '+integer(p.coords.accuracy)+' m');$('status').textContent='Location ready · GPS not tracking';$('current-location').textContent='Current location ready';if(!coords.length)$('map-status').textContent='Your location';drawPosition(lastPos);if(map&&!mainMapBrowsing)map.setView([lastPos[1],lastPos[0]],14,{animate:false});
@@ -13,7 +15,23 @@ function previewCurrentLocation(){
 }
 function initStartScreen(){
   isDemo=false;dest=null;coords=[];targets=[];cityTargets=[];roadFacilities=[];routeLength=0;progress=0;lastPos=null;travelDistances=[0];travelSeconds=[0];
-  $('destination').value='';$('start').hidden=true;$('trip-actions').hidden=true;$('mode').textContent='Plan your trip';$('status').textContent='Waiting for your location';$('hero-state').textContent='Choose a destination';$('update').textContent='No live trip yet';$('route-label').textContent='Your location → Choose a destination';$('route-type').textContent='No route selected';$('map-status').textContent='Your current location will appear here';$('discovery-status').textContent='Select a destination to see cities along your route.';$('city-count').textContent='No route selected';$('total').textContent='—';$('retry-cities').hidden=true;$('retry-route').hidden=true;$('retry-weather').hidden=true;$('weather-status').textContent='Arrival forecasts load after you start a trip.';
+  $('destination').value='';
+  $('start').hidden=true;
+  $('trip-actions').hidden=true;
+  $('mode').textContent='Plan your trip';
+  $('status').textContent='Waiting for your location';
+  $('hero-state').textContent='Choose a destination';
+  $('update').textContent='No live trip yet';
+  $('route-label').textContent='Your location → Choose a destination';
+  $('route-type').textContent='No route selected';
+  $('map-status').textContent='Your current location will appear here';
+  $('discovery-status').textContent='Select a destination to see cities along your route.';
+  $('city-count').textContent='No route selected';
+  $('total').textContent='—';
+  $('retry-cities').hidden=true;
+  $('retry-route').hidden=true;
+  $('retry-weather').hidden=true;
+  $('weather-status').textContent='Arrival forecasts load after you start a trip.';
   $('use-location').onclick=previewCurrentLocation;message('');updateRegionPanel();loadRegions().then(updateRegionPanel).catch(()=>{});restoreLastDestination();
   previewCurrentLocation();
 }

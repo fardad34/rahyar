@@ -3,7 +3,15 @@ let speedModel=[],speedLoadBusy=false,speedLoadAt=0,speedLoadEnd=0,speedError=''
 const warnedChanges=new Set();
 function decodeRouteShape(encoded){
   if(typeof encoded!=='string')throw Error('Missing road geometry');let index=0,lat=0,lon=0;const points=[];
-  while(index<encoded.length){let results=[];for(let part=0;part<2;part++){let value=0,shift=0,b;do{if(index>=encoded.length||shift>30)throw Error('Invalid road geometry');b=encoded.charCodeAt(index++)-63;value|=(b&31)<<shift;shift+=5}while(b>=32);results.push(value&1?~(value>>1):value>>1)}lat+=results[0];lon+=results[1];points.push([lon/1e6,lat/1e6])}return points;
+  while(index<encoded.length){let results=[];
+    for(let part=0;part<2;part++){let value=0,shift=0,b;
+      do{if(index>=encoded.length||shift>30)throw Error('Invalid road geometry');
+        b=encoded.charCodeAt(index++)-63;
+        value|=(b&31)<<shift;
+        shift+=5}while(b>=32);
+      results.push(value&1?~(value>>1):value>>1)}lat+=results[0];
+    lon+=results[1];
+    points.push([lon/1e6,lat/1e6])}return points;
 }
 function parseSpeedTrace(data,from,to){
   if(data.units&&data.units!=='kilometers')throw Error('Unexpected speed units');const line=decodeRouteShape(data.shape),segments=[];
@@ -18,7 +26,16 @@ function parseSpeedTrace(data,from,to){
   }
   return segments.sort((a,b)=>a.start-b.start);
 }
-function resetSpeedContext(){speedModel=[];speedLoadAt=0;speedLoadEnd=0;speedError='';speedLoadBusy=false;warnedChanges.clear();speedPreviewDistance=null;speedPreviewTimers.forEach(clearTimeout);speedPreviewTimers=[];if($('hud-upcoming-sign'))$('hud-upcoming-sign').classList.remove('flash-warning','flash-danger')}
+function resetSpeedContext(){speedModel=[];
+  speedLoadAt=0;
+  speedLoadEnd=0;
+  speedError='';
+  speedLoadBusy=false;
+  warnedChanges.clear();
+  speedPreviewDistance=null;
+  speedPreviewTimers.forEach(clearTimeout);
+  speedPreviewTimers=[];
+  if($('hud-upcoming-sign'))$('hud-upcoming-sign').classList.remove('flash-warning','flash-danger')}
 async function loadSpeedAhead(force=false){
   if(isDemo||!coords.length||speedLoadBusy)return;
   const now=Date.now();if(!force&&(now-speedLoadAt<30000||(progress<speedLoadEnd-1200&&now-speedLoadAt<600000)))return;
@@ -44,7 +61,12 @@ function speedContext(){
 function limitDisplay(kmh){return Number.isFinite(kmh)?integer(kmh/(usesMiles(currentCountry)?1.609344:1)):'—'}
 function nearDistance(meters){return usesMiles(currentCountry)?(meters>0&&meters<16.09344?'<0.01':(roadDistance(meters)).toFixed(2))+' mi':integer(meters)+' m'}
 function flashSpeedWarning(level,message){
-  const sign=$('hud-upcoming-sign');sign.classList.remove('flash-warning','flash-danger');void sign.offsetWidth;sign.classList.add(level==='danger'?'flash-danger':'flash-warning');sign.onanimationend=()=>sign.classList.remove('flash-warning','flash-danger');$('hud-announcement').textContent=message;
+  const sign=$('hud-upcoming-sign');
+  sign.classList.remove('flash-warning','flash-danger');
+  void sign.offsetWidth;
+  sign.classList.add(level==='danger'?'flash-danger':'flash-warning');
+  sign.onanimationend=()=>sign.classList.remove('flash-warning','flash-danger');
+  $('hud-announcement').textContent=message;
 }
 function updateDrivingHud(){
   refreshFocusSummary(true);updateCockpitMapState();updateStationWarning();
@@ -55,19 +77,24 @@ function updateDrivingHud(){
   $('hud-car-unit').textContent=speedUnit();$('hud-limit-unit').textContent=speedUnit();$('hud-next-unit').textContent=speedUnit();
   $('hud-road-limit').textContent=current?.limit?limitDisplay(current.limit):'—';
   const tooFast=!isDemo&&fresh&&accurate&&current?.limit&&Number.isFinite(lastSpeedMps)&&lastSpeedMps*3.6>current.limit+3;
-  $('hud-car-ring').classList.toggle('over-limit',!!tooFast);$('hud-driving-state').textContent=isDemo?'DEMO · SAMPLE SPEEDS':!fresh?'GPS NOT READY / STALE':!accurate?'GPS ACCURACY LOW':tooFast?'ABOVE MAPPED LIMIT':'LIVE GPS';
+  $('hud-car-ring').classList.toggle('over-limit',!!tooFast);
+  $('hud-driving-state').textContent=isDemo?'DEMO · SAMPLE SPEEDS':!fresh?'GPS NOT READY / STALE':!accurate?'GPS ACCURACY LOW':tooFast?'ABOVE MAPPED LIMIT':'LIVE GPS';
   $('hud-limit-source').textContent=isDemo?'Sample limit · Not live road data':speedLoadBusy?'Loading road-limit data…':!fresh?'Start live tracking for road limits':!accurate?'Alerts paused until GPS accuracy improves':speedError||(current?.limit?'Mapped road limit · OSM / Valhalla':'No mapped limit for this road');
   if(speedError&&!speedLoadBusy&&!current?.limit)$('hud-limit-source').textContent=speedError;
   $('hud-next-limit').textContent=next?limitDisplay(next.limit):'—';$('hud-change-distance').textContent=next?nearDistance(context.distance)+' ahead':'No change ahead';
   const active=next&&context.distance>0&&context.distance<=300;
-  $('hud-upcoming').classList.toggle('change-near',!!active);$('hud-upcoming').classList.toggle('change-imminent',!!active&&context.distance<=100);
+  $('hud-upcoming').hidden=!active;$('hud-upcoming').classList.toggle('change-near',!!active);$('hud-upcoming').classList.toggle('change-imminent',!!active&&context.distance<=100);
   $('hud-change-label').textContent=active?'SPEED LIMIT CHANGING':'NEXT MAPPED LIMIT';
   if(active){const stage=context.distance<=100?100:context.distance<=200?200:300,key=(isDemo?'demo':routeRevision)+':'+Math.round(next.start)+':'+next.limit+':'+stage;
-    if(!warnedChanges.has(key)){warnedChanges.add(key);if(!isDemo)announceSpeedStage(stage);flashSpeedWarning(stage===100?'danger':'warning','Speed limit changes to '+limitDisplay(next.limit)+' '+speedUnit()+' in '+nearDistance(context.distance));}
+    if(!warnedChanges.has(key)){warnedChanges.add(key);
+      if(!isDemo){announceSpeedStage(stage);
+        if(stage===300&&typeof speakNavigationText==='function')speakNavigationText(mappedSpeedAnnouncement(limitDisplay(next.limit),speedUnit(),nearDistance(context.distance)));}flashSpeedWarning(stage===100?'danger':'warning','Speed limit changes to '+limitDisplay(next.limit)+' '+speedUnit()+' in '+nearDistance(context.distance));}
   }
   $('hud-facility-status').textContent=isDemo?'Demo stops · Start a live trip for real locations.':facilityCatalogLoaded?'Bundled inventory loaded · '+integer(roadFacilities.filter(f=>f.at>=progress-150).length)+' stops ahead'+(facilityScanBusy?' · Checking online details…':facilityScanFailed?' · Extra online coverage unavailable':' · Coverage varies'):facilityScanBusy?'Loading stop inventory…':'Stop inventory not loaded · Use Refresh stops';
   for(const [key,kinds]of [['weigh',['weigh','inspection']],['truck',['truck','service']],['rest',['rest']],['diesel',['diesel']]]){
-    const facility=roadFacilities.find(f=>facilityVisible(f)&&f.at>=progress-150&&(key!=='weigh'||isGovernmentFacility(f))&&(kinds.includes(f.kind)||(key==='diesel'&&f.commercialDiesel)));$('hud-'+key+'-distance').textContent=facility?fa(roadDistance(facility.at-progress))+' '+distanceUnit():'—';$('hud-'+key+'-name').textContent=facility?facility.name:facilityScanBusy?'Finding mapped locations…':!facilityCatalogLoaded&&facilityScanFailed?'Location data unavailable':'None identified ahead in loaded data';
+    const facility=roadFacilities.find(f=>facilityVisible(f)&&f.at>=progress-150&&(key!=='weigh'||isGovernmentFacility(f))&&(kinds.includes(f.kind)||(key==='diesel'&&f.commercialDiesel)));
+    $('hud-'+key+'-distance').textContent=facility?fa(roadDistance(facility.at-progress))+' '+distanceUnit():'—';
+    $('hud-'+key+'-name').textContent=facility?facility.name:facilityScanBusy?'Finding mapped locations…':!facilityCatalogLoaded&&facilityScanFailed?'Location data unavailable':'None identified ahead in loaded data';
   }
 }
 function previewSpeedWarnings(){

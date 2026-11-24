@@ -1,0 +1,16 @@
+{
+  "engine": "eSpeak NG text-to-speech: 1.51",
+  "language": "fa",
+  "kind": "synthetic fixed navigation phrases; no arbitrary road-name speech",
+  "phrases": {
+    "enabled": "راهنمای صوتی فارسی روشن است",
+    "left": "به چپ بپیچید",
+    "right": "به راست بپیچید",
+    "continue": "در مسیر ادامه دهید",
+    "exit": "از خروجی پیش رو خارج شوید",
+    "roundabout": "به میدان نزدیک می‌شوید. مسیر مشخص شده روی نقشه را دنبال کنید",
+    "arrive": "به مقصد نزدیک می‌شوید",
+    "reached": "به مقصد رسیدید",
+    "speed": "حد سرعت در پیش رو تغییر می‌کند. به تابلوهای جاده توجه کنید"
+  }
+}
