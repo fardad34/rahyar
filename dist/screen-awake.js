@@ -21,7 +21,12 @@ function setScreenAwakeReason(reason,enabled){
   refreshScreenAwakeRequest();
 }
 function refreshScreenAwakeRequest(){
-  if(!wantsScreenAwake()){const previous=screenAwakeSentinel;screenAwakeSentinel=null;screenAwakeState='idle';if(previous)Promise.resolve(previous.release()).catch(()=>{});updateScreenAwakeStatus();return}
+  if(!wantsScreenAwake()){const previous=screenAwakeSentinel;
+    screenAwakeSentinel=null;
+    screenAwakeState='idle';
+    if(previous)Promise.resolve(previous.release()).catch(()=>{});
+    updateScreenAwakeStatus();
+    return}
   requestScreenAwake();
 }
 async function requestScreenAwake(){

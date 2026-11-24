@@ -15,7 +15,7 @@ assert.equal(jumps[0].padding.top-jumps[0].padding.bottom,352);
 assert.match(vm.runInContext('navigationStyle()',c),/liberty$/);
 const satellite=vm.runInContext('navigationSatellite=true;navigationNight=true;navigationStyle()',c);
 assert.match(satellite.sources.imagery.tiles[0],/World_Imagery/);
-assert.equal(satellite.layers[0].paint['raster-brightness-max'],.65);
+assert.equal(satellite.layers[0].paint['raster-brightness-max'],.8);
 
 c.document.body.classList.contains=()=>false;
 vm.runInContext('pauseMainMapFollow();followNavigationPosition([.8,.8])',c);

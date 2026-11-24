@@ -165,9 +165,9 @@ body {
   border-color: var(--accent);
 }
 .night-map .leaflet-tile-pane {
-  filter: invert(.91) hue-rotate(180deg) brightness(.72) saturate(.75);
+  filter: invert(.91) hue-rotate(180deg) brightness(.88) saturate(.75);
 }
-.night-map.satellite-map .leaflet-tile-pane { filter: brightness(.65); }
+.night-map.satellite-map .leaflet-tile-pane { filter: brightness(.8); }
 .night-map .maplibregl-ctrl-group button {
   background-color: #6b7c85;
 }
@@ -1049,3 +1049,52 @@ body:not(.driving) .planning-workspace .actions { padding-top: 0; }
   font-size:clamp(14px,1.35vw,17px); font-weight:750;
 }
 .driving .focus-map-host .map-heading [hidden] { display:none; }
+
+/* Shared reporting uses dedicated styles; existing navigation layout is preserved. */
+.cloud-panel { margin:1rem; padding:1rem; max-width:100%; }
+.cloud-panel summary { cursor:pointer; min-height:44px; }
+#cloud-auth { display:flex; flex-wrap:wrap; gap:.7rem; align-items:end; margin:1rem 0; }
+#cloud-auth label { display:flex; flex-direction:column; min-width:180px; flex:1; }
+#shared-report-list { padding-inline-start:1.2rem; max-height:320px; overflow:auto; }
+#shared-report-list li { padding:.6rem 0; display:flex; gap:.6rem; justify-content:space-between; }
+.floating-report { position:fixed; right:16px; bottom:max(24px,env(safe-area-inset-bottom)); z-index:950; min-height:52px; box-shadow:0 4px 20px #0005; }
+#report-dialog { max-width:min(94vw,640px); }
+#report-dialog .report-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+#report-dialog button { min-height:48px; }
+#nearby-station-actions>div { display:flex; flex-wrap:wrap; gap:.5rem; padding:.8rem 0; }
+.station-report-panel[data-status="unknown"] .station-lamps i { background:#7c8795; }
+
+#cloud-auth[hidden], #route-vehicle[hidden], #pick-map-pin[hidden] { display:none!important; }
+.vehicle-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:.5rem 0; }
+.vehicle-card { display:flex; flex-direction:column; align-items:center; min-height:105px; }
+.vehicle-card svg { width:100%; max-width:145px; height:65px; }
+.vehicle-card[aria-pressed="true"] { outline:2px solid var(--accent); background:var(--theme-highlight,#243c43); }
+.destination-history { margin:12px 0; }
+.destination-history summary { min-height:44px; cursor:pointer; }
+#destination-history { display:grid; gap:6px; max-height:300px; overflow:auto; }
+#destination-history>div { display:flex; gap:6px; }
+#destination-history>div>button:first-child { flex:1; text-align:start; }
+#vehicle-configs { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.searchrow { display:grid!important; grid-template-columns:minmax(0,1fr) auto!important; gap:8px; }
+:root[data-theme="graphite"] { --bg:#1b1b20;--panel:#28282f;--line:#55555e;--ink:#fafafa;--muted:#c7c7d0;--accent:#b7c8f5;--theme-control:#33333e;--theme-hover:#414152;--theme-input:#22222a;--theme-highlight:#393947;--theme-on-accent:#191925;--theme-alert:#ffc19d;color-scheme:dark; }
+:root[data-theme="forest"] { --bg:#101f19;--panel:#1b3026;--line:#4a6c59;--ink:#f0fff5;--muted:#bbd7c4;--accent:#b0e3a2;--theme-control:#294738;--theme-hover:#385d48;--theme-input:#17291f;--theme-highlight:#355337;--theme-on-accent:#15241a;--theme-alert:#ffd59d;color-scheme:dark; }
+:root[data-theme="sand"] { --bg:#f2e9d9;--panel:#fff8ec;--line:#b0a18a;--ink:#372d20;--muted:#695b47;--accent:#795018;--theme-control:#e9ddc8;--theme-hover:#dfcfb3;--theme-input:#fffdf5;--theme-highlight:#f3e0ba;--theme-on-accent:#fff8ec;--theme-alert:#9a351a;color-scheme:light; }
+body.driving .speed-dials { grid-template-columns:1fr 1fr!important; }
+body.driving .speed-dials .upcoming-speed { grid-column:2; width:auto!important; display:grid!important; grid-template-columns:auto auto; gap:4px; padding:5px; border-radius:8px; background:var(--panel); }
+body.driving .speed-dials .upcoming-speed .upcoming-sign { border:0!important; border-radius:0!important; width:35px!important;height:28px!important; background:transparent!important; }
+body.driving .speed-dials .upcoming-speed .upcoming-sign strong { position:static!important; transform:none!important;font-size:20px!important; }
+body.driving .speed-dials .upcoming-speed .upcoming-sign span { display:none; }
+body.driving .speed-dials .upcoming-speed.change-near { background:#f7cd55;color:#2e260e; }
+body.driving #focus-follow { min-height:44px; }
+
+.map-settings-menu { position:absolute; top:12px; right:12px; z-index:900; }
+.map-settings-menu>summary { display:grid;place-items:center;list-style:none;min-width:48px;min-height:48px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;font-size:24px;cursor:pointer; }
+.map-settings-content { display:grid;gap:6px;position:absolute;right:0;top:54px;width:210px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 20px #0006; }
+.map-settings-content .secondary { font-size:14px;min-height:44px!important; }
+.compact-recenter { min-height:44px!important;min-width:44px!important;margin:5px; }
+#offline-route-canvas { width:100%;height:auto;border-radius:10px;margin-top:12px; }
+#offline-directions { max-height:230px;overflow:auto; }
+body.driving .cloud-panel { display:none; }
+@media(max-width:480px){ .header-right { gap:4px!important; } .header-right>button { padding-inline:7px!important; } main { padding-inline:16px; } }
+
+#map,#navigation-map,.speed-dials,#offline-route-canvas { direction:ltr; }

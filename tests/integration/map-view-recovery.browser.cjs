@@ -1,0 +1,8 @@
+'use strict';
+const {chromium}=require('@playwright/test'),assert=require('node:assert/strict');
+(async()=>{const proxy=process.env.HTTPS_PROXY;const b=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox'],proxy:proxy?{server:new URL(proxy).origin,bypass:'localhost,127.0.0.1'}:undefined});const c=await b.newContext({ignoreHTTPSErrors:true,viewport:{width:1180,height:820},serviceWorkers:'block'}),p=await c.newPage();try{
+ await p.goto(process.env.BASE_URL||'http://127.0.0.1:3061');await p.locator('#notice-agree').check();await p.locator('#notice-confirm').click();await p.waitForFunction(()=>navigationBasemapReady&&navigationReady,null,{timeout:45000});assert.equal(await p.evaluate(()=>$('map').hidden),true);
+ await c.route('https://tiles.openfreemap.org/**',r=>/\/planet\/.*\.(pbf|mvt)(?:\?|$)/.test(r.request().url())?r.abort('failed'):r.continue());
+ await p.evaluate(()=>{mainMapBrowsing=true;navigationMap.jumpTo({center:[2.35,48.85],zoom:13,pitch:0});});await p.waitForFunction(()=>!navigationReady&&!$('map').hidden,null,{timeout:20000});assert(await p.evaluate(()=>map.getCenter().distanceTo(L.latLng(48.85,2.35))<1000));
+ await c.unroute('https://tiles.openfreemap.org/**');await p.locator('[aria-label="Map layers"]').click();await p.locator('#map-dimension').click();await p.locator('#nav-layers-dialog [aria-label^="Close"]').click();await p.waitForFunction(()=>navigationBasemapReady&&navigationReady&&$('map').hidden,null,{timeout:45000});console.log('PASS healthy map → failed new viewport → correctly centered 2D fallback → actual Map layers Retry restores real 3D tiles');
+}finally{await c.close();await b.close();}})().catch(e=>{console.error(e.stack);process.exitCode=1;});

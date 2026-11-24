@@ -1,0 +1,3 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');const {recoveryHTML}=require('../scripts/recovery-entry.cjs');
+test('online recovery entry preserves canonical scripts and uses same-origin history without clearing data',()=>{const source='<html><head><title>Rahyar</title><script src="app.js?v=4"></script></head></html>';const html=recoveryHTML(source);assert(html.includes('src="app.js?v=4"'));assert(html.includes('history.replaceState(history.state'));assert(!/localStorage|sessionStorage|caches.delete|location.replace/.test(html));assert.equal(html.replace(/<script>if\(location.pathname[\s\S]+?<\/script>/,''),source);});
