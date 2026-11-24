@@ -11,7 +11,7 @@ Install Node.js 24 LTS, npm and Git. Clone into your own Projects folder, then o
 ```sh
 git clone https://github.com/fardad34/rahyar.git
 cd rahyar
-git switch feature/navigation-redesign-20261118T130316Z
+git switch feature/reliability-data-20261124
 npm ci
 ```
 
@@ -118,3 +118,17 @@ Nearby bypass alternatives, PTH 101 North reference evidence, approximate tail E
 See [the review, limitations and verification](docs/AUDIO_LAYOUT_RELEASE_20261123.md). Persian basic uses nine bundled synthetic MP3 prompts (about 196 KiB), decoded through Web Audio without a browser Persian voice or external TTS. It does not read arbitrary road names, exit numbers or numerical speed limits. The native-device voice option remains available when exposed.
 
 Optional regeneration requires Python 3, eSpeak NG (Persian voice data) and ffmpeg: `python3 scripts/generate-persian-prompts.py`. These are not runtime dependencies and are not required for normal builds. Only generated audio and the phrase manifest ship with the app. Browser checks: `BASE_URL=http://127.0.0.1:3000 node tests/integration/speech-media.browser.cjs` and `BASE_URL=http://127.0.0.1:3000 node tests/integration/road-slot.browser.cjs`.
+
+## Three-stage development release (24 November 2026)
+
+See [Stage 1](docs/stages/STAGE1.md), [Stage 2](docs/stages/STAGE2.md) and [Stage 3](docs/stages/STAGE3.md). Each has a stacked development branch/PR and a separate Netlify Deploy Preview. Main/production publishing remains locked.
+
+The service worker automatically prepares the shell on HTTPS/loopback. Only a successfully installed version activates. Shell/home are network-first with a 4-second cached fallback; JSON/CDN use stale-while-revalidate; a maximum of 600 visited tiles are retained, not a downloadable region. Live providers and private APIs are never intercepted. Cached maps may be incomplete/stale and browser storage may be evicted. No offline rerouting or newly verified truck legality is claimed. Explicit Basic preparation/delete controls remain.
+
+When changing a script, update its `?v=` in `dist/index.html`; bump `REV` in `dist/sw.js` for a new shell generation, run tests/build, and verify an actual offline reload. Keep no-cache headers for HTML/worker. Local DM Sans/Manrope fonts and Leaflet have source/license notices under `dist/vendor/`; no unpkg/Google Fonts runtime dependency remains.
+
+Settings → Routing provider accepts an explicit HTTPS Valhalla route endpoint (HTTP only on loopback for development). Custom routes go directly from browser to that endpoint with your actual vehicle profile; configure CORS on your server. No embedded credentials/query keys are accepted; no silent fallback to public Valhalla occurs. The public service can reject routes, rate-limit or be unavailable; it cannot certify all truck restrictions. Do not lower actual truck dimensions to make a rejected route appear valid.
+
+**Future proposal, not implemented:** gradually move classic frontend scripts to `src/` behind a tested build/module boundary, starting with routing/data adapters. The new reporting client already has a build; the shared-global frontend remains intact. A wholesale migration requires a separate review/approval.
+
+License decision: the existing `leaflet-rotate` plugin is GPL-3.0. Public distribution may carry license obligations; the owner must decide whether to retain it or approve a separately reviewed replacement. No license conclusion or legal advice is implied, and this release preserves the existing plugin.

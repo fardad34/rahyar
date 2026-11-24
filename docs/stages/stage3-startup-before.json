@@ -1,0 +1,30 @@
+{
+  "mode": "startup without a GPS grant or active route",
+  "data": [
+    {
+      "file": "facility-catalog.js",
+      "bytes": 1015118
+    },
+    {
+      "file": "route-cities.js",
+      "bytes": 4393
+    },
+    {
+      "file": "cities-na.json",
+      "bytes": 2918506
+    },
+    {
+      "file": "cities-eu.json",
+      "bytes": 1035278
+    },
+    {
+      "file": "regions-na.json",
+      "bytes": 8575476
+    },
+    {
+      "file": "regions-eu.json",
+      "bytes": 289838
+    }
+  ],
+  "totalBytes": 13838609
+}

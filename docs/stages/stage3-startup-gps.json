@@ -1,0 +1,22 @@
+{
+  "mode": "startup with Toronto GPS, no active route",
+  "data": [
+    {
+      "file": "facility-catalog.js",
+      "bytes": 784
+    },
+    {
+      "file": "route-cities.js",
+      "bytes": 4393
+    },
+    {
+      "file": "regions-na.json",
+      "bytes": 8575476
+    },
+    {
+      "file": "cities-na.json",
+      "bytes": 2918506
+    }
+  ],
+  "totalBytes": 11499159
+}

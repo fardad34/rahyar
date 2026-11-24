@@ -5,14 +5,14 @@
 async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=false,maxRequests=48,maxSectionMeters=400000,alternativeCount=0,onProgress=()=>{}}={}) {
   const originCountry=typeof regionAt==='function'?regionAt(points[0])?.country:null;
   const northAmerica=originCountry?['CA','US'].includes(originCountry):null;
-  const catalog=(await loadCatalog()).filter(c=>(!canadaOnly||c.country==='CA')&&(northAmerica===null||['CA','US'].includes(c.country)===northAmerica));
-  let requests=0,extraRequests=0;const memo=new Map();
+  const catalog=(await loadCatalog(points[0])).filter(c=>(!canadaOnly||c.country==='CA')&&(northAmerica===null||['CA','US'].includes(c.country)===northAmerica));
+  let requests=0,extraRequests=0;const memo=new Map(),failed=new Map();
   const request=async pair=>{
-    const key=JSON.stringify(pair);if(memo.has(key))return memo.get(key);
+    const key=JSON.stringify(pair);if(memo.has(key))return memo.get(key);if(failed.has(key))throw failed.get(key);
     if(++requests>maxRequests)throw Object.assign(new Error('Segment request budget exceeded'),{code:'SegmentBudgetExceeded'});
     onProgress(requests);
     const reserveExtra=()=>{if(extraRequests>=4||requests>=maxRequests-8)return false;extraRequests++;requests++;onProgress(requests);return true;};
-    const result=await requestSingle(pair,reserveExtra);memo.set(key,result);return result;
+    try{const result=await requestSingle(pair,reserveExtra);memo.set(key,result);return result;}catch(error){failed.set(key,error);throw error;}
   };
   function candidates(a,b){
     const direct=hav(a,b),middle=[(a[0]+b[0])/2,(a[1]+b[1])/2];
@@ -49,7 +49,7 @@ async function requestSegmentedVehicleRoute(points,requestSingle,{canadaOnly=fal
     steps.push(...(route.legs||[]).flatMap(l=>l.steps||[]));
   }
   for(let i=1;i<points.length;i++){
-    originalLeg=i-1;let parts=await split(points[i-1],points[i]);parts=await bypassArtificialStops(parts,request);const steps=[];const beforeDistance=totalDistance,beforeDuration=totalDuration;
+    originalLeg=i-1;let parts=await split(points[i-1],points[i]);parts=await bypassArtificialStops(parts,pair=>requests>=maxRequests-8?Promise.resolve([]):request(pair));const steps=[];const beforeDistance=totalDistance,beforeDuration=totalDuration;
     for(const part of parts)await append(part,steps);
     // Intermediate split arrivals/departures are not destinations. Keep only
     // the first departure and last arrival for each originally requested leg.

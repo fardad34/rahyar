@@ -167,12 +167,11 @@ function project(p){
   }return best;
 }
 function loadCatalog(){
-  if(!catalogPromise)catalogPromise=Promise.all([
-    getJSON('cities-na.json?v=5'),
-    getJSON('cities-eu.json?v=1'),
-  ]).then(data=>data.flatMap(j=>j.cities).map(r=>({id:r[0],name:r[6]?.[0]||r[1],en:r[6]?.[0]||r[1],coord:[r[2],r[3]],country:r[4],region:r[5]||'',aliases:[r[1],...(r[6]||[])],zone:r[7]||null}))).catch(e=>{catalogPromise=null;throw e});
-  return catalogPromise;
+  const point=arguments[0],names=point?(point[0]<-30||point[0]>170?['cities-na.json?v=5']:['cities-eu.json?v=1']):['cities-na.json?v=5','cities-eu.json?v=1'];
+  loadCatalog.pending ||= new Map();
+  return Promise.all(names.map(name=>{if(!loadCatalog.pending.has(name))loadCatalog.pending.set(name,getJSON(name).then(j=>j.cities.map(r=>({id:r[0],name:r[6]?.[0]||r[1],en:r[6]?.[0]||r[1],coord:[r[2],r[3]],country:r[4],region:r[5]||'',aliases:[r[1],...(r[6]||[])],zone:r[7]||null}))).catch(error=>{loadCatalog.pending.delete(name);throw error;}));return loadCatalog.pending.get(name);})).then(data=>data.flat());
 }
+
 let lastMainFitRevision=-1;
 function initMap(){if(!window.L){$('map').textContent="Map unavailable. The city list is still available.";
     return}map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,touchRotate:false,shiftKeyRotate:false,bearing:0}).setView([50,-100],4);
@@ -285,7 +284,7 @@ async function discoverCities(token,revision=routeRevision){
   if(coords.some(([x,y])=>x>=-139.1&&x<=-114&&y>=48.2&&y<=60.1))municipalFiles.push('bc-municipalities.json?v=1');
   if(chunks.some(chunk=>chunk.some(point=>regionAt(point)?.country==='CA')))municipalFiles.push('ca-municipalities.json?v=1');
   const [catalog,...municipalities]=await Promise.allSettled([
-    loadCatalog(),
+    loadCatalog(coords[0]),
     ...municipalFiles.map(loadMunicipalBoundaries),
   ]);
   if(!current())return;

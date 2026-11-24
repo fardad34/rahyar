@@ -16,10 +16,14 @@ function regionAt(p){
     for(let i=0;i<f.polygons.length;i++){if(f.polygonBoxes?.[i]&&!isInBox(p,f.polygonBoxes[i]))continue;const rings=f.polygons[i];if(inRing(p,rings[0])&&!rings.slice(1).some(r=>inRing(p,r)))return f}
   }return null;
 }
-function loadRegions(){if(!regionPromise)regionPromise=Promise.all([
-  getJSON('regions-na.json?v=6',{},30000),
-  getJSON('regions-eu.json?v=1',{},15000),
-]).then(data=>{regionFeatures=data.flatMap(j=>j.regions);return regionFeatures}).catch(e=>{regionPromise=null;throw e});return regionPromise}
+const regionDatasetLoads=new Map();
+function loadRegions(point=typeof lastPos!=='undefined'?lastPos:null){
+ if(!point&&typeof dest!=='undefined')point=dest?.coord;
+ if(!point&&typeof window!=='undefined')return Promise.resolve(regionFeatures);
+ const names=point?(point[0]<-30||point[0]>170?['regions-na.json?v=6']:['regions-eu.json?v=1']):['regions-na.json?v=6','regions-eu.json?v=1'];
+ return Promise.all(names.map(name=>{if(!regionDatasetLoads.has(name))regionDatasetLoads.set(name,getJSON(name,{},30000).then(data=>{const codes=new Set(regionFeatures.map(r=>r.code));regionFeatures.push(...data.regions.filter(r=>!codes.has(r.code)));return data;}).catch(error=>{regionDatasetLoads.delete(name);throw error;}));return regionDatasetLoads.get(name);})).then(()=>regionFeatures);
+}
+
 function pointOnRoute(distance){
   if(!coords.length)return null;const d=Math.max(0,Math.min(distance,routeLength))/scale;let lo=0,hi=cumulative.length-1;
   while(lo+1<hi){const m=(lo+hi)>>1;if(cumulative[m]<=d)lo=m;else hi=m}
@@ -186,7 +190,7 @@ async function fetchFacilityChunk(chunk){
 async function scanFacilities(token,revision=routeRevision){
   const scan=++facilityLoadRevision,current=()=>token===session&&revision===routeRevision&&scan===facilityLoadRevision&&!isDemo;
   const chunks=discoveryChunks(coords);if(!chunks.length)return;facilityScanBusy=true;facilityScanFailed=0;updateTripInspectionCount();
-  try{const catalog=window.RAHYAR_FACILITY_CATALOG||await getJSON('facility-catalog.json?v=15');if(!current())return;facilityCatalogLoaded=true;const entries=[];
+  try{const catalog=window.RAHYAR_FACILITY_CATALOG||await (window.loadFacilityCatalog?window.loadFacilityCatalog():getJSON('facility-catalog.json?v=15'));if(!current())return;facilityCatalogLoaded=true;const entries=[];
     for(const f of catalog.facilities||[]){if(f.kind==='scale')continue;
       const p=project(f.coord);
       if(p.off<2500&&p.along>=progress-150&&p.along<=routeLength)entries.push({...f,en:f.name,at:p.along,off:p.off,osmType:f.sourceType||'bts',osmId:f.sourceId})}

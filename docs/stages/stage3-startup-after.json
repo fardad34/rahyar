@@ -1,0 +1,14 @@
+{
+  "mode": "startup without a GPS grant or active route",
+  "data": [
+    {
+      "file": "facility-catalog.js",
+      "bytes": 784
+    },
+    {
+      "file": "route-cities.js",
+      "bytes": 4393
+    }
+  ],
+  "totalBytes": 5177
+}

@@ -37,7 +37,8 @@ window.rahyarSubmitStation = async (station,status) => {
  if(!Number.isFinite(gpsTravelHeading))throw Error('Travel direction is unavailable. Report when GPS direction is reliable.');
  return window.RahyarCloud.submit({category:'weigh',station_key:window.RahyarCloud.stationKey(station),status,latitude:lastPos[1],longitude:lastPos[0],accuracy_m:lastAccuracyMeters,heading:gpsTravelHeading});
 };
-window.rahyarOpenStationReport = () => {
+window.rahyarOpenStationReport = async () => {
+ try{await window.loadFacilityCatalog?.();}catch{$('nearby-station-actions').textContent='Station inventory unavailable. Status remains Unknown.';return;}
  const box=$('nearby-station-actions');box.replaceChildren();
  const stations=(window.RAHYAR_FACILITY_CATALOG?.facilities||[]).filter(s=>s.authority==='government' && lastPos && hav(lastPos,s.coord)<=1500);
  for(const station of stations){

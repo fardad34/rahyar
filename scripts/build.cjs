@@ -11,5 +11,5 @@ mkdirSync('dist/vendor/leaflet',{recursive:true});
 for(const file of ['leaflet.js','leaflet.css'])copyFileSync('node_modules/leaflet/dist/'+file,'dist/vendor/leaflet/'+file);
 cpSync('node_modules/leaflet/dist/images','dist/vendor/leaflet/images',{recursive:true});
 copyFileSync('node_modules/leaflet/LICENSE','dist/vendor/leaflet/LICENSE');
-const assets=files('dist').filter(p=>!p.endsWith('.json')&&!p.endsWith('offline-manifest.json'));
+const assets=files('dist').filter(p=>!p.endsWith('.json')&&!p.endsWith('offline-manifest.json')&&!p.endsWith('/_headers')&&!p.endsWith('/_redirects'));
 writeFileSync('dist/offline-manifest.json',JSON.stringify({version:require('node:crypto').createHash('sha256').update(assets.map(p=>p+require('node:crypto').createHash('sha256').update(readFileSync(p)).digest('hex')).join('|')).digest('hex').slice(0,16),files:assets.map(p=>p.replace(/^dist\//,'')),bytes:assets.reduce((n,p)=>n+statSync(p).size,0)}));

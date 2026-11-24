@@ -42,7 +42,7 @@ async function searchPlaces(){
       if(local.length){showCityResults(local);
         $('search-status').textContent=integer(local.length)+' results. Select a match.';
         return}}
-    if(placeSearchMode!=='watch'&&typeof window!=='undefined'){const facilities=localFacilityMatches(q,window.RAHYAR_FACILITY_CATALOG?.facilities||[]);
+    if(placeSearchMode!=='watch'&&typeof window!=='undefined'){if(!window.RAHYAR_FACILITY_CATALOG&&window.loadFacilityCatalog)try{await window.loadFacilityCatalog();}catch{}if(id!==requestId)return;const facilities=localFacilityMatches(q,window.RAHYAR_FACILITY_CATALOG?.facilities||[]);
       if(facilities.length){showCityResults(facilities);
         $('search-status').textContent=facilities.length+' inventory matches. Verify travel direction and signed entrance; operating status is separate.';
         return;}}

@@ -154,10 +154,12 @@ async function segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternat
     if(capturedSession!==null&&capturedSession!==session)throw Object.assign(new Error('Trip changed'),{name:'AbortError'});
     const routes=await fetchVehicleRoutes(pair,alternatives,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true,reserveExtra});
     return canadaOnly?routes.filter(r=>!routeEntersUnitedStates(r)):routes;
-  },{canadaOnly,alternativeCount:alternatives,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
+  },{canadaOnly,maxRequests:47,alternativeCount:alternatives,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
   const {alternativeRoutes=[],...primary}=route;return [primary,...alternativeRoutes].slice(0,3);
 }
 async function vehicleRoutingRequest(request,timeout,purpose=''){
+  const endpoint=typeof window!=='undefined'?window.RahyarRoutingSettings?.getEndpoint():null;
+  if(endpoint&&endpoint!=='https://valhalla1.openstreetmap.de/route')return getJSON(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)},timeout??32000);
   // Same-origin gateway avoids client CORS/preflight and URL-size dependencies.
   // Retain the direct provider for static legacy hosting without Functions.
   if(typeof window!=='undefined'&&typeof document!=='undefined'){
@@ -219,7 +221,7 @@ function truckRouteErrorMessage(error) {
   if (error.code === 'SegmentBudgetExceeded') return 'Long-route calculation reached its request budget. Your previous route is preserved. Retry or select a waypoint.';
   if (['SegmentNoRoute','DisconnectedSegments'].includes(error.code)) return 'Could not connect all sections with your vehicle restrictions. Your previous route is preserved. Try another corridor or waypoint.';
   if (error.code === 'DistanceExceeded' || error.errorCode === 154) {
-    return 'This trip exceeds the routing service distance limit. Choose an intermediate destination for the first leg.';
+    return 'The routing provider could not complete a section after automatic splitting. Your current route is retained; retry or check the routing provider in settings.';
   }
   if (error.status === 429) return 'The routing service is busy. Wait briefly and retry.';
   if (error.name === 'TimeoutError') return 'The routing service timed out. Retry the route.';
