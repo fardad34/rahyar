@@ -70,3 +70,7 @@ See [nearby-corridor handover](docs/UPCOMING_CORRIDORS_20261122.md). Background 
 ## 23 November: completed audio/layout follow-up
 
 See [overall review, precise capabilities, tests and rollback](docs/AUDIO_LAYOUT_RELEASE_20261123.md). Persian basic now uses nine actual bundled synthetic prompts independent of browser voice installation; arbitrary road-name/number TTS remains unsupported by this fallback. The road label shrinks to its text and occupies the measured lower-map gap between docked trip sheet and milestone. It hides behind no full-width expanded panel. All changes remain on development PR #2; physical iPad output remains a manual check.
+
+## 24 November: blank-map/search recovery
+
+[Reproduction and verified recovery](docs/MAP_RECOVERY_20261124.md): actual basemap tile readiness now controls vector visibility, preserving Leaflet streets when vector data fails; real map-layer Retry restores vector rendering. Destination selection previews without GPS and permission errors remain visible. The offline status banner is no longer hidden by the shell CSS. The exact user's iPad/network fault remains unverified; failure injection and normal Chromium route regressions passed.

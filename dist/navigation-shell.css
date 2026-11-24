@@ -1,6 +1,6 @@
 /* Map-first Rahyar presentation. Existing engines and data are unchanged. */
 body.navigation-redesign{--nav-surface:#13202e;--nav-raised:#1b2a3a;--nav-border:#ffffff16;--nav-text:#f2f6fc;--nav-muted:#9eafbf;--nav-purple:#a98aff;background:#0b1621;color:var(--nav-text);height:100dvh;min-height:0;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;margin:0;padding:0}
-body.navigation-redesign> :not(#nav-shell):not(dialog):not(script):not(audio):not(noscript){display:none!important}
+body.navigation-redesign> :not(#nav-shell):not(#offline-banner):not(dialog):not(script):not(audio):not(noscript){display:none!important}
 .navigation-redesign [hidden]{display:none!important}
 .nav-shell{position:fixed;inset:0;overflow:hidden;color:var(--nav-text);isolation:isolate}
 .nav-shell svg,.navigation-redesign dialog svg{width:24px;height:24px;flex-shrink:0}

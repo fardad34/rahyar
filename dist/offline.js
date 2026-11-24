@@ -12,7 +12,7 @@
       banner.setAttribute('role', 'status');
       banner.setAttribute('aria-live', 'polite');
       banner.style.cssText =
-        'position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);z-index:1250;box-sizing:border-box;width:max-content;max-width:calc(100vw - 24px);padding:12px 16px;border:1px solid var(--line,#64748b);border-left:4px solid var(--accent,#a78bfa);border-radius:12px;background:var(--panel,#162534);color:var(--ink,#f3f7fc);font-size:16px;font-weight:700;line-height:1.4;text-align:center';
+        'pointer-events:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);z-index:1250;box-sizing:border-box;width:max-content;max-width:calc(100vw - 24px);padding:12px 16px;border:1px solid var(--line,#64748b);border-left:4px solid var(--accent,#a78bfa);border-radius:12px;background:var(--panel,#162534);color:var(--ink,#f3f7fc);font-size:16px;font-weight:700;line-height:1.4;text-align:center';
       document.body.append(banner);
     }
     clearTimeout(timer);

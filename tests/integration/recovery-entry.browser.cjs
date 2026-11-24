@@ -1,0 +1,8 @@
+'use strict';
+// Actual worker/cache: a stale home page cannot replace the online recovery entry.
+const {chromium}=require('@playwright/test'),assert=require('node:assert/strict');
+(async()=>{const b=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});const c=await b.newContext(),p=await c.newPage();try{
+ await p.goto(process.env.BASE_URL||'http://127.0.0.1:3061');await p.locator('#notice-agree').check();await p.locator('#notice-confirm').click();await p.evaluate(()=>navigator.serviceWorker.ready);await p.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+ await p.evaluate(async()=>{localStorage.setItem('recovery-preserve-test','kept');for(const n of await caches.keys())if(n.includes('-shell-')){const cache=await caches.open(n);await cache.put(new URL('index.html',location.href),new Response('<html><title>Stale cached home</title></html>',{headers:{'Content-Type':'text/html'}}));}});
+ await p.goto(new URL('/road-test.html?app-update=recovery-test',process.env.BASE_URL||'http://127.0.0.1:3061').href,{waitUntil:'domcontentloaded'});await p.waitForSelector('#nav-shell');assert.match(await p.title(),/Rahyar/);assert.equal(new URL(p.url()).pathname,'/');assert.equal(await p.evaluate(()=>localStorage.getItem('recovery-preserve-test')),'kept');assert.equal(await p.evaluate(()=>typeof navigationBaseTileReady),'function');console.log('PASS recovery entry bypasses stale cached home, loads current code and preserves same-origin storage/history');
+}finally{await c.close();await b.close();}})().catch(e=>{console.error(e.stack);process.exitCode=1;});

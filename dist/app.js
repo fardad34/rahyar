@@ -643,6 +643,13 @@ $('stop').onclick=()=>{window.rahyarSetTripIntent?.(false);
   message("Tracking paused. Distances and arrival estimates are frozen at the last update.")};
 $('destination').onchange=()=>{const c=destinations[$('destination').value];
   if(c)selectDestination(c)};
+function previewDestinationOnMap(city){
+  if(watch!==null||coords.length||!Array.isArray(city?.coord)||city.coord.length!==2||!city.coord.every(Number.isFinite)||Math.abs(city.coord[0])>180||Math.abs(city.coord[1])>90)return false;
+  drawMapPin(city.coord);
+  if(map)map.setView([city.coord[1],city.coord[0]],12,{animate:false});
+  if(navigationMap)navigationMap.jumpTo({center:city.coord,zoom:12,pitch:0,bearing:0,padding:{top:0,bottom:0,left:0,right:0}});
+  window.rahyarShowDestinationPreview?.();return true;
+}
 function selectDestination(city,startNow=true){
   if(!city)return;
   clearTruckProfileStart();
@@ -652,7 +659,7 @@ function selectDestination(city,startNow=true){
   $('save-current-destination').disabled=false;
   if(!active)$('end-trip').hidden=true;
   isDemo=false;
-  drawMapPin(city.mapPin ? city.coord : null);
+  if(!previewDestinationOnMap(city))drawMapPin(city.coord);
   try{localStorage.setItem('rahyar.lastDestination',JSON.stringify(city))}catch{}
   if(startNow||active){start();return}
   if(wasDemo||coords.length){tripDeparture=null;
@@ -795,7 +802,7 @@ function updateGpsStatus(text,error=false){
 function gpsError(e){
   const text=e.code===1?"Location permission denied. Open in Safari or Chrome and set Location to Allow in site settings.":e.code===2?"Location unavailable. Turn on Location Services on your phone and try again.":"GPS timed out. Try again outdoors.";
   if(!coords.length)$('trip-summary-empty').textContent='Waiting for GPS to calculate your route.';
-  updateGpsStatus(text,true);message('');$('status').textContent="GPS unavailable";$('hero-state').textContent="No GPS";
+  updateGpsStatus(text,true);message(text,true);$('status').textContent="GPS unavailable";$('hero-state').textContent="No GPS";
 }
 let tripDeparture=null;
 let travelDistances=[0],travelSeconds=[0],timingSnapshot=Date.now(),weatherObserver;

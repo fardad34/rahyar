@@ -18,3 +18,6 @@ dist/offline-manifest.json
 dist/vendor/leaflet/
 
 .netlify/
+
+# Generated online recovery entry; build from canonical index.html.
+dist/road-test.html

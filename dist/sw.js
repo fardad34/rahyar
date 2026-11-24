@@ -2,7 +2,7 @@
 const ROOT = new URL(self.registration.scope),
   ORIGIN = ROOT.origin;
 const PREFIX = 'rahyar-sw-v1-',
-  REV = '20261124-s3r2';
+  REV = '20261124-map-recovery';
 const CACHES = {
   shell: PREFIX + 'shell-' + REV,
   data: PREFIX + 'data-' + REV,
