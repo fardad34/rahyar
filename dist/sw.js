@@ -2,7 +2,7 @@
 const ROOT = new URL(self.registration.scope),
   ORIGIN = ROOT.origin;
 const PREFIX = 'rahyar-sw-v1-',
-  REV = '20261124-s3';
+  REV = '20261124-s3r2';
 const CACHES = {
   shell: PREFIX + 'shell-' + REV,
   data: PREFIX + 'data-' + REV,
@@ -82,14 +82,18 @@ function strategyFor(value, request = {}) {
 }
 async function save(cache, request, response, tiles = false) {
   if (response?.ok && response.type !== 'opaque' && (!request.method || request.method === 'GET')) {
-    await cache.put(request, response.clone());
-    if (tiles) {
-      const keys = await cache.keys();
-      for (const key of keys.slice(0, Math.max(0, keys.length - 600))) await cache.delete(key);
-    }
+    try {
+      await cache.put(request, response.clone());
+      if (tiles) {
+        const keys = await cache.keys();
+        for (const key of keys.slice(0, Math.max(0, keys.length - 600))) await cache.delete(key);
+      }
+    } catch { /* Storage/quota failure must not discard a usable network response. */ }
   }
   return response;
 }
+async function savedCopy(cache,request){try{return await cache.match(request,{ignoreVary:true});}catch{return undefined;}}
+
 async function download(request, cache, tiles = false) {
   const url = new URL(request.url || request, ROOT);
   let response;
@@ -103,8 +107,8 @@ async function download(request, cache, tiles = false) {
   return save(cache, request, response, tiles);
 }
 async function networkFirst(request, cache, event, navigation = false, tiles = false) {
-  let saved = await cache.match(request, { ignoreVary: true });
-  if (!saved && navigation) saved = await cache.match(new URL('index.html', ROOT).href, { ignoreVary: true });
+  let saved = await savedCopy(cache, request);
+  if (!saved && navigation) saved = await savedCopy(cache, new URL('index.html', ROOT).href);
   const network = download(request, cache, tiles);
   event?.waitUntil(
     network.then(
@@ -128,10 +132,10 @@ async function networkFirst(request, cache, event, navigation = false, tiles = f
 async function handle(request, event) {
   const strategy = strategyFor(request.url, request);
   const name = strategy === 'navigate' ? 'shell' : strategy.startsWith('tiles') ? 'tiles' : strategy;
-  const cache = await caches.open(CACHES[name]);
+  let cache;try{cache=await caches.open(CACHES[name]);}catch{return fetch(request);}
   if (strategy === 'navigate' || strategy === 'shell' || strategy === 'tiles-fresh')
     return networkFirst(request, cache, event, strategy === 'navigate', name === 'tiles');
-  const saved = await cache.match(request, { ignoreVary: true });
+  const saved = await savedCopy(cache, request);
   if (strategy === 'tiles') return saved || download(request, cache, true);
   const fresh = download(request, cache);
   event?.waitUntil(

@@ -212,3 +212,6 @@ test('CORS failure returns ordinary uncached fetch and visited tile cache stays 
   assert.equal(cache.records.size, 600);
   assert.equal(await cache.match('https://a.tile.openstreetmap.org/0.png'), undefined);
 });
+
+test('runtime cache quota failure does not discard a successful network response',async()=>{const {c}=worker();const cache={put:async()=>{throw Error('QuotaExceededError');}};const response=await c.save(cache,new Request('https://rahyar.test/app.js'),new Response('network works'));assert.equal(await response.text(),'network works');});
+test('blocked cache storage falls through to network without intercepting app startup',async()=>{const {c}=worker();c.caches={open:async()=>{throw Error('Storage blocked');}};c.fetch=async()=>new Response('available online');assert.equal(await (await c.handle(new Request('https://rahyar.test/app.js'))).text(),'available online');});

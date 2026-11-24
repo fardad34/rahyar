@@ -22,6 +22,7 @@ The prairie-specific Canada-only waypoint fallback was **not generalized** witho
 - Before/after startup measurement (no GPS grant, no active route) covers only city/region/facility resource files, **not all app/map/font traffic**: **13,838,609 → 5,177 bytes**. Reports are committed alongside this document.
 - With fresh Toronto GPS and no active route: **11,499,159 bytes** in those datasets, including 8,575,476-byte NA boundaries and 2,918,506-byte NA city catalog. Accurate region/nearby-city features still require this data. Europe is not also downloaded. Boundaries and cities load per continent; worldwide address search can still load both city catalogs. No precision reduction was applied.
 - Municipal datasets were already route-demand-loaded; retain that behavior. Full original JSON datasets remain. Further spatial partitioning is future work, not claimed complete.
+- Runtime cache read/write/quota failure preserves successful network responses instead of breaking an online app. Required install precache still fails atomically when storage cannot be prepared.
 - Build offline manifest now excludes Netlify control files `_headers`/`_redirects`, which would not be usable app resources on Netlify. The existing PREPARE/delete workflow remains tested.
 
 ## Truthful road-data capabilities
@@ -50,7 +51,7 @@ Existing leaflet-rotate remains **GPL-3.0**. Public distribution may create lice
 
 README/package.json tooling already existed and is preserved/updated. README documents tests, preview deployment, worker generations/query versions, local fonts/data and provider configuration. Proposed future migration of remaining frontend sources to src/modules/build is **not implemented**; it requires a separate review. Stage 1 whitespace hashes are checked against the immutable Stage 1 Git commit after intentional Stage 3 functional edits.
 
-- **137 unit/regression tests passed, zero failed**; syntax/JSON and production-style preview build passed.
+- **139 unit/regression tests passed, zero failed**; syntax/JSON and production-style preview build passed.
 - Real worker install/local fonts, explicit PREPARE, offline HTML/CSS/app-shell reload and recovery passed.
 - Real-route responsive navigation regression passed 1180×820, 390×844 and 844×390; gestures, map/maneuver/speed visibility, restored route/profile and active GPS intent; no page errors. GPS is emulated.
 - Destination-input browser checks passed with explicitly emulated microphone/clipboard/GPS and unsupported fallback. Actual iOS mic/recognition is untested.
