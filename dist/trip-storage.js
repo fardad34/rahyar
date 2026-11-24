@@ -61,7 +61,7 @@
   if($('offline-wifi').checked&&connection?.type&&connection.type!=='wifi'&&connection.type!=='ethernet'){$('offline-status').textContent='Wi-Fi preference blocked this download. Connect to Wi-Fi or disable the preference.';return;}
   try{
    const response=await fetch('offline-manifest.json');if(!response.ok)throw Error('Build the application before offline preparation.');const manifest=await response.json();
-   if(!confirm('Store '+(manifest.bytes/1024/1024).toFixed(1)+' MB of app files and '+(new Blob([JSON.stringify(snapshot)]).size/1024).toFixed(0)+' KB of route data on this device? No map tiles will be downloaded. Safari may evict this data.'+($('offline-wifi').checked&&!connection?.type?' This browser cannot verify Wi-Fi; continue only after checking your connection.':'' )))return;
+   if(!confirm('Store '+(manifest.bytes/1024/1024).toFixed(1)+' MB of app files and '+(new Blob([JSON.stringify(snapshot)]).size/1024).toFixed(0)+' KB of route data on this device? No extra map tiles will be prefetched; previously viewed tiles may be cached. Safari may evict this data.'+($('offline-wifi').checked&&!connection?.type?' This browser cannot verify Wi-Fi; continue only after checking your connection.':'' )))return;
    if(!('serviceWorker' in navigator))throw Error('Service workers are unavailable in this browser. Route data remains saved locally.');
    const registration=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;
    const worker=registration.active||registration.waiting||registration.installing;
@@ -72,7 +72,7 @@
  $('delete-offline').onclick=async()=>{
   if(!confirm('Delete this saved route and offline app cache? Media and other saved places will be preserved.'))return;
   try{localStorage.removeItem(fallbackKey);}catch{}await transaction('readwrite',s=>s.delete('last'));snapshot=null;window.RahyarLocalCorridors?.reset();
-  for(const name of await caches.keys())if(name.startsWith('rahyar-offline-'))await caches.delete(name);
+  for(const name of await caches.keys())if(name.startsWith('rahyar-offline-')||name.startsWith('rahyar-sw-'))await caches.delete(name);
   if(gpsWatch!==null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;}render();$('offline-status').textContent='Saved route and offline app cache deleted.';
  };
  function restorePreview(){

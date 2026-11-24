@@ -1,7 +1,8 @@
 'use strict';
 const $=id=>document.getElementById(id), fa=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:1,minimumFractionDigits:1}).format(n), integer=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n);
 const known=[["تورنتو", "Toronto", -79.3832, 43.6532], ["مونترال", "Montréal", -73.5673, 45.5017], ["اتاوا", "Ottawa", -75.6972, 45.4215], ["ونکوور", "Vancouver", -123.1207, 49.2827], ["وینیپگ", "Winnipeg", -97.138, 49.895], ["کلگری", "Calgary", -114.0719, 51.0447], ["اوشاوا", "Oshawa", -78.8658, 43.8971], ["کوبورگ", "Cobourg", -78.1677, 43.9598], ["بلویل", "Belleville", -77.3832, 44.1628], ["کینگستون", "Kingston", -76.486, 44.2312], ["بروکویل", "Brockville", -75.6843, 44.5895], ["کورنوال", "Cornwall", -74.7286, 45.0213], ["لندن", "London", -81.2453, 42.9849], ["بری", "Barrie", -79.6903, 44.3894], ["سودبری", "Sudbury", -80.993, 46.4917], ["نورث بی", "North Bay", -79.46, 46.31], ["سو سنت ماری", "Sault Ste. Marie", -84.3358, 46.5219], ["واوا", "Wawa", -84.773, 47.994], ["تاندر بی", "Thunder Bay", -89.2477, 48.3809], ["درایدن", "Dryden", -92.837, 49.783], ["کنورا", "Kenora", -94.489, 49.767], ["برندون", "Brandon", -99.9519, 49.8485], ["رجاینا", "Regina", -104.6189, 50.4452], ["سوئیفت کارنت", "Swift Current", -107.7972, 50.2881], ["مدیسن هت", "Medicine Hat", -110.677, 50.0405], ["بنْف", "Banff", -115.5708, 51.1784], ["گلدن", "Golden", -116.9629, 51.299], ["رولستوک", "Revelstoke", -118.1957, 50.9981], ["کملوپس", "Kamloops", -120.3273, 50.6745], ["هوپ", "Hope", -121.4419, 49.3793], ["ادمونتون", "Edmonton", -113.4938, 53.5461], ["ساسکاتون", "Saskatoon", -106.67, 52.1332], ["نیویورک", "New York", -74.006, 40.7128], ["شیکاگو", "Chicago", -87.6298, 41.8781], ["سیاتل", "Seattle", -122.3321, 47.6062], ["دیترویت", "Detroit", -83.0458, 42.3314], ["مینیاپولیس", "Minneapolis", -93.265, 44.9778], ["فارگو", "Fargo", -96.7898, 46.8772], ["بیزمارک", "Bismarck", -100.7837, 46.8083], ["بیلینگز", "Billings", -108.5007, 45.7833], ["اسپوکن", "Spokane", -117.426, 47.6588], ["لس‌آنجلس", "Los Angeles", -118.2437, 34.0522]].map(([name,en,x,y])=>({name:en.normalize('NFKD').replace(/\p{M}/gu,''),en:en.normalize('NFKD').replace(/\p{M}/gu,''),aliases:[name,en],coord:[x,y]}));
-const knownZones=["America/Toronto", "America/Toronto", "America/Toronto", "America/Vancouver", "America/Winnipeg", "America/Edmonton", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Winnipeg", "America/Winnipeg", "America/Winnipeg", "America/Regina", "America/Swift_Current", "America/Edmonton", "America/Edmonton", "America/Edmonton", "America/Vancouver", "America/Vancouver", "America/Vancouver", "America/Edmonton", "America/Regina", "America/New_York", "America/Chicago", "America/Los_Angeles", "America/Detroit", "America/Chicago", "America/Chicago", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Los_Angeles"];known.forEach((c,i)=>c.zone=knownZones[i]);
+const knownZones=["America/Toronto", "America/Toronto", "America/Toronto", "America/Vancouver", "America/Winnipeg", "America/Edmonton", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Toronto", "America/Winnipeg", "America/Winnipeg", "America/Winnipeg", "America/Regina", "America/Swift_Current", "America/Edmonton", "America/Edmonton", "America/Edmonton", "America/Vancouver", "America/Vancouver", "America/Vancouver", "America/Edmonton", "America/Regina", "America/New_York", "America/Chicago", "America/Los_Angeles", "America/Detroit", "America/Chicago", "America/Chicago", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Los_Angeles"];
+known.forEach((c,i)=>c.zone=knownZones[i]);
 const destinations={montreal:known[1],ottawa:known[2],toronto:known[0],vancouver:known[3],winnipeg:known[4],calgary:known[5],edmonton:known[30],newyork:known[32],chicago:known[33],seattle:known[34],losangeles:known[41]};
 const quickStops=[
   ['Canada West',[
@@ -105,7 +106,9 @@ function chooseRoute(index) {
   selectedAlternative=true;
   displayRouteChoices(routeChoices,index);
   pendingVia=route.highwayVia||route.cityVia||null;
-  activateRoute(route,pendingVia,lastPos||route.geometry.coordinates[0],session);if(watch===null){$('mode').textContent='Route preview';message('Route selected for review. Start GPS to revalidate before driving.');}
+  activateRoute(route,pendingVia,lastPos||route.geometry.coordinates[0],session);
+  if(watch===null){$('mode').textContent='Route preview';
+    message('Route selected for review. Start GPS to revalidate before driving.');}
 }
 
 function setCustomVia(place) {
@@ -137,8 +140,14 @@ function selectedVia() {
 }
 
 function message(text,error=false){$('message').textContent=text;$('message').className=error?'error':''}
-function hav(a,b){const r=Math.PI/180,dy=(b[1]-a[1])*r,dx=(b[0]-a[0])*r;return 6371000*2*Math.atan2(Math.sqrt(Math.sin(dy/2)**2+Math.cos(a[1]*r)*Math.cos(b[1]*r)*Math.sin(dx/2)**2),Math.sqrt(1-(Math.sin(dy/2)**2+Math.cos(a[1]*r)*Math.cos(b[1]*r)*Math.sin(dx/2)**2)))}
-function prepare(line,length){coords=line;cumulative=[0];for(let i=1;i<line.length;i++)cumulative.push(cumulative[i-1]+hav(line[i-1],line[i]));scale=length/cumulative.at(-1);routeLength=length;routeGrid=new Map();
+function hav(a,b){const r=Math.PI/180,dy=(b[1]-a[1])*r,dx=(b[0]-a[0])*r;
+  return 6371000*2*Math.atan2(Math.sqrt(Math.sin(dy/2)**2+Math.cos(a[1]*r)*Math.cos(b[1]*r)*Math.sin(dx/2)**2),Math.sqrt(1-(Math.sin(dy/2)**2+Math.cos(a[1]*r)*Math.cos(b[1]*r)*Math.sin(dx/2)**2)))}
+function prepare(line,length){coords=line;
+  cumulative=[0];
+  for(let i=1;i<line.length;i++)cumulative.push(cumulative[i-1]+hav(line[i-1],line[i]));
+  scale=length/cumulative.at(-1);
+  routeLength=length;
+  routeGrid=new Map();
   for(let i=1;i<coords.length;i++){
     const a=coords[i-1],b=coords[i];
     for(let x=Math.floor(Math.min(a[0],b[0])*4);x<=Math.floor(Math.max(a[0],b[0])*4);x++)
@@ -165,7 +174,9 @@ function loadCatalog(){
   return catalogPromise;
 }
 let lastMainFitRevision=-1;
-function initMap(){if(!window.L){$('map').textContent="Map unavailable. The city list is still available.";return}map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,touchRotate:false,shiftKeyRotate:false,bearing:0}).setView([50,-100],4);L.control.zoom({position:'bottomleft'}).addTo(map);
+function initMap(){if(!window.L){$('map').textContent="Map unavailable. The city list is still available.";
+    return}map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,touchRotate:false,shiftKeyRotate:false,bearing:0}).setView([50,-100],4);
+  L.control.zoom({position:'bottomleft'}).addTo(map);
   const host=map.getContainer();
   map.on('dragstart',pauseMapForGesture);
   map.on('dragend',resumeMapAfterGesture);
@@ -191,8 +202,20 @@ function drawRoute(){syncNavigationData();
   const driving=document.body.classList.contains('driving');
   const fitMain=!driving&&!mainMapBrowsing&&lastMainFitRevision!==routeRevision;
   if(fitMain){lastMainFitRevision=routeRevision;fitNavigationRoute()}
-  if(!map)return;if(routeLayer)map.removeLayer(routeLayer);routeLayer=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#8538d1',weight:9,opacity:1}).addTo(map);markers.forEach(m=>map.removeLayer(m));markers=[];targets.filter(facilityVisible).forEach(t=>{const pin=t.routeCoord||t.coord;const m=L.circleMarker([pin[1],pin[0]],{radius:5,color:'#fff',weight:2,fillColor:t.kind&&t.kind!=='city'?'#e7be78':'#a5e7cb',fillOpacity:1}).addTo(map).bindTooltip(()=>{const label=document.createElement('span');label.textContent=t.name+' · '+kindLabel(t);return label},{direction:'top'});markers.push(m)});if(document.body.classList.contains('driving'))followCockpitPosition(lastPos||pointOnRoute(progress));else if(fitMain)map.fitBounds(routeLayer.getBounds(),{padding:[35,35]})}
-function drawPosition(c){$('main-map-center').disabled=false;if(document.body.classList.contains('driving'))followCockpitPosition(c);else followNavigationPosition(c,!coords.length);if(!map)return;if(positionLayer)positionLayer.setLatLng([c[1],c[0]]);else positionLayer=L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="gps-marker"></div>',iconSize:document.body.classList.contains('navigation-redesign')?($('route-vehicle').value==='truck'?[46,88]:[39,66]):[18,18],iconAnchor:document.body.classList.contains('navigation-redesign')?($('route-vehicle').value==='truck'?[23,44]:[19.5,33]):[9,9]})}).addTo(map)}
+  if(!map)return;
+  if(routeLayer)map.removeLayer(routeLayer);
+  routeLayer=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#8538d1',weight:9,opacity:1}).addTo(map);
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
+  targets.filter(facilityVisible).forEach(t=>{const pin=t.routeCoord||t.coord;const m=L.circleMarker([pin[1],pin[0]],{radius:5,color:'#fff',weight:2,fillColor:t.kind&&t.kind!=='city'?'#e7be78':'#a5e7cb',fillOpacity:1}).addTo(map).bindTooltip(()=>{const label=document.createElement('span');label.textContent=t.name+' · '+kindLabel(t);return label},{direction:'top'});markers.push(m)});
+  if(document.body.classList.contains('driving'))followCockpitPosition(lastPos||pointOnRoute(progress));
+  else if(fitMain)map.fitBounds(routeLayer.getBounds(),{padding:[35,35]})}
+function drawPosition(c){$('main-map-center').disabled=false;
+  if(document.body.classList.contains('driving'))followCockpitPosition(c);
+  else followNavigationPosition(c,!coords.length);
+  if(!map)return;
+  if(positionLayer)positionLayer.setLatLng([c[1],c[0]]);
+  else positionLayer=L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="gps-marker"></div>',iconSize:document.body.classList.contains('navigation-redesign')?($('route-vehicle').value==='truck'?[46,88]:[39,66]):[18,18],iconAnchor:document.body.classList.contains('navigation-redesign')?($('route-vehicle').value==='truck'?[23,44]:[19.5,33]):[9,9]})}).addTo(map)}
 function routeCityCandidates(list, destination, length, locate, via=null, viaAt=null, boundaries=new Map(), samples=[], routePoint=null, lookupRegion=null, roads=[]){
   const candidates=[];
   for(const city of list){
@@ -408,7 +431,9 @@ async function calculate(c,token,heading) {
     }
     if(!routes.length&&!remembered?.length)throw Error('No route returned');
     if(routes.length>1)routes.splice(1,routes.length-1,...distinctVehicleAlternatives(routes[0],routes.slice(1),2));
-    if(remembered?.length){const preferred=window.RahyarRouteMemory.throughRoute(remembered[0]);const available=routes.filter(r=>window.RahyarRouteMemory.different(r,preferred)||window.RahyarRouteMemory.different(preferred,r));routes.splice(0,routes.length,preferred,...distinctVehicleAlternatives(preferred,available,2));}
+    if(remembered?.length){const preferred=window.RahyarRouteMemory.throughRoute(remembered[0]);
+      const available=routes.filter(r=>window.RahyarRouteMemory.different(r,preferred)||window.RahyarRouteMemory.different(preferred,r));
+      routes.splice(0,routes.length,preferred,...distinctVehicleAlternatives(preferred,available,2));}
     const index=remembered?.length?0:preferredRouteIndex(routes);
     displayRouteChoices(routes,index);
     pendingVia=routes[index].highwayVia||routes[index].cityVia||via;
@@ -489,7 +514,19 @@ function refreshLiveProgress() {
   updateRouteGuidance();
   updateDrivingHud();
 }
-function stopWatch(){setScreenAwakeReason('trip',false);if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;session++;routeBusy=false;$('route-vehicle').disabled=false;displayRouteChoices([]);selectedAlternative=false;$('start').hidden=!dest;$('start').textContent=coords.length?'Resume trip':'Start saved trip';$('stop').hidden=true;$('trip-actions').hidden=!dest;updateRouteGuidance()}
+function stopWatch(){setScreenAwakeReason('trip',false);
+  if(watch!==null)navigator.geolocation.clearWatch(watch);
+  watch=null;
+  session++;
+  routeBusy=false;
+  $('route-vehicle').disabled=false;
+  displayRouteChoices([]);
+  selectedAlternative=false;
+  $('start').hidden=!dest;
+  $('start').textContent=coords.length?'Resume trip':'Start saved trip';
+  $('stop').hidden=true;
+  $('trip-actions').hidden=!dest;
+  updateRouteGuidance()}
 function endTrip(arrived=false){
   window.RahyarLocalCorridors?.reset();activeNavigationRoute=null;
   window.RahyarJournal?.finish(arrived).catch(()=>{});
@@ -536,15 +573,114 @@ function start(){
   }
   unlockNavigationAudio();
   if(spokenAlerts&&!voiceActivated)speakNavigation('enabled');
-  resetMapHeading();if(!navigator.geolocation){updateGpsStatus("Location is not available in this browser. Open this link in Safari or Chrome.",true);return}stopWatch();tripEndState='';arrivalFixes=0;lastArrivalFix=null;spokenManeuvers.clear();pendingNavigationCues.clear();$('end-trip').hidden=false;activeRouteVehicle=vehicle;activeTruckProfile=profile;mainMapBrowsing=false;pendingVia=selectedVia()||(pendingVia?.memoryRoute?pendingVia:null);viaRouteDistance=null;offRouteFixes=0;setScreenAwakeReason('trip',true);isDemo=false;tripDeparture=null;$('trip-summary-empty').textContent='Calculating your '+vehicleLabel(vehicle)+' route…';resetRoadContext();travelDistances=[0];travelSeconds=[0];timingSnapshot=Date.now();discoveryBusy=false;$('retry-cities').hidden=true;$('discovery-status').textContent="Cities will load after GPS connects.";coords=[];targets=[];routeLength=0;progress=0;lastPos=null;gpsTime=0;routeManeuvers=[];guidanceOffRoute=false;lastRouteAt=0;$('retry-route').hidden=true;syncNavigationData();render();if(map){if(routeLayer)map.removeLayer(routeLayer);markers.forEach(m=>map.removeLayer(m));if(positionLayer)map.removeLayer(positionLayer);positionLayer=null}const token=session;window.rahyarSetTripIntent?.(true);$('route-vehicle').disabled=true;updateGpsStatus("Waiting for location permission and GPS\u2026");$('mode').textContent="Live trip";$('hero-state').textContent="Waiting for GPS";$('status').textContent="\u25cc Connecting GPS";$('start').hidden=true;$('stop').hidden=false;$('trip-actions').hidden=false;$('route-label').textContent="Your location \u2192 "+dest.name;message('');watch=navigator.geolocation.watchPosition(p=>onPosition(p,token),e=>{if(token!==session)return;gpsError(e);if(e.code===1){stopWatch();window.rahyarSetTripIntent?.(false);} /* Temporary GPS errors keep the active trip and watch alive. */},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});updateRouteGuidance()}
-$('retry-route').onclick=()=>{if(lastPos&&!isDemo&&!routeBusy)calculate(lastPos,session)};for(const id of ['route-choice','focus-route-choice'])$(id).onchange=()=>chooseRoute(Number($(id).value));$('route-via').onchange=()=>{if(!$('route-via').value)pendingVia=null;$('route-via-note').textContent='';updateViaLabel();if(watch!==null)start()};$('start').onclick=start;$('end-trip').onclick=()=>endTrip();$('stop').onclick=()=>{window.rahyarSetTripIntent?.(false);stopWatch();updateGpsStatus("GPS stopped. City search is available.");$('status').textContent="Location paused";$('hero-state').textContent="Paused";message("Tracking paused. Distances and arrival estimates are frozen at the last update.")};$('destination').onchange=()=>{const c=destinations[$('destination').value];if(c)selectDestination(c)};
+  resetMapHeading();
+  if(!navigator.geolocation){updateGpsStatus("Location is not available in this browser. Open this link in Safari or Chrome.",true);
+    return}stopWatch();
+  tripEndState='';
+  arrivalFixes=0;
+  lastArrivalFix=null;
+  spokenManeuvers.clear();
+  pendingNavigationCues.clear();
+  $('end-trip').hidden=false;
+  activeRouteVehicle=vehicle;
+  activeTruckProfile=profile;
+  mainMapBrowsing=false;
+  pendingVia=selectedVia()||(pendingVia?.memoryRoute?pendingVia:null);
+  viaRouteDistance=null;
+  offRouteFixes=0;
+  setScreenAwakeReason('trip',true);
+  isDemo=false;
+  tripDeparture=null;
+  $('trip-summary-empty').textContent='Calculating your '+vehicleLabel(vehicle)+' route…';
+  resetRoadContext();
+  travelDistances=[0];
+  travelSeconds=[0];
+  timingSnapshot=Date.now();
+  discoveryBusy=false;
+  $('retry-cities').hidden=true;
+  $('discovery-status').textContent="Cities will load after GPS connects.";
+  coords=[];
+  targets=[];
+  routeLength=0;
+  progress=0;
+  lastPos=null;
+  gpsTime=0;
+  routeManeuvers=[];
+  guidanceOffRoute=false;
+  lastRouteAt=0;
+  $('retry-route').hidden=true;
+  syncNavigationData();
+  render();
+  if(map){if(routeLayer)map.removeLayer(routeLayer);
+    markers.forEach(m=>map.removeLayer(m));
+    if(positionLayer)map.removeLayer(positionLayer);
+    positionLayer=null}const token=session;
+  window.rahyarSetTripIntent?.(true);
+  $('route-vehicle').disabled=true;
+  updateGpsStatus("Waiting for location permission and GPS\u2026");
+  $('mode').textContent="Live trip";
+  $('hero-state').textContent="Waiting for GPS";
+  $('status').textContent="\u25cc Connecting GPS";
+  $('start').hidden=true;
+  $('stop').hidden=false;
+  $('trip-actions').hidden=false;
+  $('route-label').textContent="Your location \u2192 "+dest.name;
+  message('');
+  watch=navigator.geolocation.watchPosition(p=>onPosition(p,token),e=>{if(token!==session)return;gpsError(e);if(e.code===1){stopWatch();window.rahyarSetTripIntent?.(false);} /* Temporary GPS errors keep the active trip and watch alive. */},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+  updateRouteGuidance()}
+$('retry-route').onclick=()=>{if(lastPos&&!isDemo&&!routeBusy)calculate(lastPos,session)};
+for(const id of ['route-choice','focus-route-choice'])$(id).onchange=()=>chooseRoute(Number($(id).value));
+$('route-via').onchange=()=>{if(!$('route-via').value)pendingVia=null;
+  $('route-via-note').textContent='';
+  updateViaLabel();
+  if(watch!==null)start()};
+$('start').onclick=start;
+$('end-trip').onclick=()=>endTrip();
+$('stop').onclick=()=>{window.rahyarSetTripIntent?.(false);
+  stopWatch();
+  updateGpsStatus("GPS stopped. City search is available.");
+  $('status').textContent="Location paused";
+  $('hero-state').textContent="Paused";
+  message("Tracking paused. Distances and arrival estimates are frozen at the last update.")};
+$('destination').onchange=()=>{const c=destinations[$('destination').value];
+  if(c)selectDestination(c)};
 function selectDestination(city,startNow=true){
-  if(!city)return;clearTruckProfileStart();const active=watch!==null,wasDemo=isDemo;dest=city;tripEndState='';$('save-current-destination').disabled=false;if(!active)$('end-trip').hidden=true;isDemo=false;drawMapPin(city.mapPin ? city.coord : null);
+  if(!city)return;
+  clearTruckProfileStart();
+  const active=watch!==null,wasDemo=isDemo;
+  dest=city;
+  tripEndState='';
+  $('save-current-destination').disabled=false;
+  if(!active)$('end-trip').hidden=true;
+  isDemo=false;
+  drawMapPin(city.mapPin ? city.coord : null);
   try{localStorage.setItem('rahyar.lastDestination',JSON.stringify(city))}catch{}
   if(startNow||active){start();return}
-  if(wasDemo||coords.length){tripDeparture=null;stopWatch();resetRoadContext();coords=[];targets=[];routeLength=0;progress=0;travelDistances=[0];travelSeconds=[0];$('update').textContent='';syncNavigationData();if(map){if(routeLayer)map.removeLayer(routeLayer);routeLayer=null;markers.forEach(m=>map.removeLayer(m));markers=[]}}
+  if(wasDemo||coords.length){tripDeparture=null;
+    stopWatch();
+    resetRoadContext();
+    coords=[];
+    targets=[];
+    routeLength=0;
+    progress=0;
+    travelDistances=[0];
+    travelSeconds=[0];
+    $('update').textContent='';
+    syncNavigationData();
+    if(map){if(routeLayer)map.removeLayer(routeLayer);
+      routeLayer=null;
+      markers.forEach(m=>map.removeLayer(m));
+      markers=[]}}
   $('trip-summary-empty').textContent='Start a live trip to see your route and weather.';
-  $('start').hidden=false;$('trip-actions').hidden=false;$('mode').textContent='Destination selected';$('status').textContent=lastPos?'Current location ready':'Waiting for location';$('hero-state').textContent='Destination selected';$('discovery-status').textContent='Start your saved trip to calculate the route.';$('route-label').textContent='Your location → '+(dest.addressLabel||dest.name);render();message('');
+  $('start').hidden=false;
+  $('trip-actions').hidden=false;
+  $('mode').textContent='Destination selected';
+  $('status').textContent=lastPos?'Current location ready':'Waiting for location';
+  $('hero-state').textContent='Destination selected';
+  $('discovery-status').textContent='Start your saved trip to calculate the route.';
+  $('route-label').textContent='Your location → '+(dest.addressLabel||dest.name);
+  render();
+  message('');
 }
 $('retry-cities').onclick=()=>{if(!isDemo&&coords.length&&!discoveryBusy)discoverCities(session)};
 const provinceNames={'01':'Alberta','02':'British Columbia','03':'Manitoba','04':'New Brunswick','05':'Newfoundland and Labrador','07':'Nova Scotia','08':'Ontario','09':'Prince Edward Island','10':'Québec','11':'Saskatchewan','12':'Yukon','13':'Northwest Territories','14':'Nunavut'};
@@ -669,7 +805,10 @@ const weatherRows=new Map();
 function buildTravelProfile(route){
   travelDistances=[0];travelSeconds=[0];
   for(const leg of route.legs||[]){const a=leg.annotation||{distance:leg.steps?.map(step=>step.distance),duration:leg.steps?.map(step=>step.duration)};if(!a.distance||!a.duration)continue;
-    for(let i=0;i<a.distance.length;i++){const d=a.distance[i],t=a.duration[i];if(!Number.isFinite(d)||!Number.isFinite(t)||d<0||t<0)continue;travelDistances.push(travelDistances.at(-1)+d);travelSeconds.push(travelSeconds.at(-1)+t)}
+    for(let i=0;i<a.distance.length;i++){const d=a.distance[i],t=a.duration[i];
+      if(!Number.isFinite(d)||!Number.isFinite(t)||d<0||t<0)continue;
+      travelDistances.push(travelDistances.at(-1)+d);
+      travelSeconds.push(travelSeconds.at(-1)+t)}
   }
   if(travelDistances.length<2||travelDistances.at(-1)<=0){travelDistances=[0,route.distance];travelSeconds=[0,route.duration]}
   else{const ds=route.distance/travelDistances.at(-1),ts=route.duration/(travelSeconds.at(-1)||1);travelDistances=travelDistances.map(d=>d*ds);travelSeconds=travelSeconds.map(t=>t*ts)}
@@ -692,7 +831,10 @@ function arrivalLabel(date,city){
   if(!date)return {time:'—',detail:'Waiting for a route'};
   const cached=forecastCache.get(forecastKey(city));const zone=city.zone||cached?.data?.timezone;
   const opts=zone?{timeZone:zone}:{};
-  try{const key=zone||'device';if(!cityFormatters.has(key))cityFormatters.set(key,{clock:new Intl.DateTimeFormat('en-US',{...opts,hour:'numeric',minute:'2-digit',hour12:true}),detail:new Intl.DateTimeFormat('en-US',{...opts,month:'short',day:'numeric',timeZoneName:'short'})});const f=cityFormatters.get(key);return {time:f.clock.format(date),detail:f.detail.format(date)+(zone?'':' · Device time')}}catch{return {time:'—',detail:'Time zone unavailable'}}
+  try{const key=zone||'device';
+    if(!cityFormatters.has(key))cityFormatters.set(key,{clock:new Intl.DateTimeFormat('en-US',{...opts,hour:'numeric',minute:'2-digit',hour12:true}),detail:new Intl.DateTimeFormat('en-US',{...opts,month:'short',day:'numeric',timeZoneName:'short'})});
+    const f=cityFormatters.get(key);
+    return {time:f.clock.format(date),detail:f.detail.format(date)+(zone?'':' · Device time')}}catch{return {time:'—',detail:'Time zone unavailable'}}
 }
 function weatherCondition(code,isDay=1){
   if(code===0)return [isDay?'Clear':'Clear night',isDay?'sun':'moon'];
@@ -710,7 +852,18 @@ function weatherCondition(code,isDay=1){
 function weatherIcon(type,label){
   const cloud='<path d="M7 20a5 5 0 0 1-.5-10A7 7 0 0 1 20 9a5.5 5.5 0 1 1 1 11H7Z"/>';
   const paths={sun:'<circle cx="16" cy="16" r="6"/><path d="M16 2v4m0 20v4M2 16h4m20 0h4M6 6l3 3m14 14 3 3M6 26l3-3M23 9l3-3"/>',moon:'<path d="M25 21A12 12 0 0 1 11 4a12 12 0 1 0 14 17Z"/>',cloud,partly:'<path d="M7 7 5 5m8 0V2m7 5 2-2M4 13H1"/><path d="M6 15a6 6 0 1 1 11-4"/>'+cloud,rain:cloud+'<path d="m9 24-2 5m9-5-2 5m9-5-2 5"/>',snow:cloud+'<path d="M9 24v6m-3-3h6m8-3v6m-3-3h6"/>',fog:cloud+'<path d="M3 25h26M6 29h20"/>','ice-warning':'<path d="M16 3 30 29H2L16 3Z"/><path d="M16 12v8m0 4v1"/>',storm:cloud+'<path d="m17 19-5 7h5l-3 6"/>',unknown:'<circle cx="16" cy="16" r="12"/><path d="M13 12a3 3 0 1 1 5 2c-2 1-2 2-2 4m0 5h.01"/>'};
-  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 32 34');svg.setAttribute('class','weather-icon');svg.setAttribute('role','img');svg.setAttribute('aria-label',label);svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.6');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');svg.innerHTML=paths[type]||paths.unknown;return svg;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 32 34');
+  svg.setAttribute('class','weather-icon');
+  svg.setAttribute('role','img');
+  svg.setAttribute('aria-label',label);
+  svg.setAttribute('fill','none');
+  svg.setAttribute('stroke','currentColor');
+  svg.setAttribute('stroke-width','1.6');
+  svg.setAttribute('stroke-linecap','round');
+  svg.setAttribute('stroke-linejoin','round');
+  svg.innerHTML=paths[type]||paths.unknown;
+  return svg;
 }
 function forecastAt(data,date){
   const h=data?.hourly;if(!h?.time?.length||!date)return null;const seconds=date.getTime()/1000;
@@ -725,10 +878,19 @@ function renderWeather(cell,city,date=arrivalFor(city)){
   cell.replaceChildren();let forecast;
   if(isDemo)forecast={temp:city.sampleTemp??7,code:city.sampleCode??2,isDay:1};
   else{const cached=forecastCache.get(forecastKey(city));forecast=forecastAt(cached?.data,date);
-    if(!forecast){const p=document.createElement('span');p.className='weather-placeholder';p.textContent=!date?'Waiting for route':cached?.status==='error'?'Forecast unavailable':cached?.status==='loading'||cached?.status==='queued'?'Loading forecast…':'Forecast loads on view';cell.append(p);return}
+    if(!forecast){const p=document.createElement('span');
+      p.className='weather-placeholder';
+      p.textContent=!date?'Waiting for route':cached?.status==='error'?'Forecast unavailable':cached?.status==='loading'||cached?.status==='queued'?'Loading forecast…':'Forecast loads on view';
+      cell.append(p);
+      return}
   }
   if(forecast.outside){const p=document.createElement('span');p.className='weather-placeholder';p.textContent='Beyond forecast range';cell.append(p);return}
-  const [label,icon]=weatherCondition(forecast.code,forecast.isDay),main=document.createElement('div'),temp=document.createElement('span'),desc=document.createElement('span');main.className='weather-main';temp.textContent=formatTemperature(forecast.temp);main.append(weatherIcon(icon,label),temp);desc.className='weather-desc';desc.textContent=label+(isDemo?' · Sample':'');
+  const [label,icon]=weatherCondition(forecast.code,forecast.isDay),main=document.createElement('div'),temp=document.createElement('span'),desc=document.createElement('span');
+  main.className='weather-main';
+  temp.textContent=formatTemperature(forecast.temp);
+  main.append(weatherIcon(icon,label),temp);
+  desc.className='weather-desc';
+  desc.textContent=label+(isDemo?' · Sample':'');
   if(icon==='ice-warning'&&!isDemo){
     main.classList.add('weather-ice');
     desc.classList.add('weather-ice-warning');
@@ -799,10 +961,21 @@ function updateTripCells(){
   $('weather-status').textContent=isDemo?'Demo weather is illustrative, not a live forecast.':failures?'Some forecasts are unavailable. Distances and arrival estimates still work.':'Hourly forecast by Open-Meteo · Matched to estimated arrival · '+temperatureUnit();
 }
 function render(){
-  updateRegionPanel();const remaining=targets.filter(t=>t.at>=progress-150&&facilityVisible(t)),next=remaining[0];$('city-count').textContent=integer(remaining.filter(t=>t.kind==='city'&&!t.final).length)+' cities · '+integer(remaining.filter(t=>t.kind!=='city').length)+' facilities';
+  updateRegionPanel();
+  const remaining=targets.filter(t=>t.at>=progress-150&&facilityVisible(t)),next=remaining[0];
+  $('city-count').textContent=integer(remaining.filter(t=>t.kind==='city'&&!t.final).length)+' cities · '+integer(remaining.filter(t=>t.kind!=='city').length)+' facilities';
   weatherObserver?.disconnect();weatherRows.clear();$('cities').replaceChildren();
   for(const [i,t]of remaining.entries()){
-    const row=document.createElement('tr');if(!i)row.className='next-row';const city=document.createElement('td'),name=document.createElement('div'),b=document.createElement('b'),small=document.createElement('small');name.className='city-name';b.textContent=t.en||t.name;small.textContent=kindLabel(t)+(t.via?' · WAYPOINT':'')+(!i?' · NEXT':'');if(t.kind!=='city'){row.classList.add('facility-row');row.dataset.kind=t.kind;small.textContent+=isDemo?' · SAMPLE':t.sourceYear?' · '+t.sourceYear+' INVENTORY':' · NEAR ROUTE'}name.append(b,small);city.append(name);
+    const row=document.createElement('tr');
+    if(!i)row.className='next-row';
+    const city=document.createElement('td'),name=document.createElement('div'),b=document.createElement('b'),small=document.createElement('small');
+    name.className='city-name';
+    b.textContent=t.en||t.name;
+    small.textContent=kindLabel(t)+(t.via?' · WAYPOINT':'')+(!i?' · NEXT':'');
+    if(t.kind!=='city'){row.classList.add('facility-row');
+      row.dataset.kind=t.kind;
+      small.textContent+=isDemo?' · SAMPLE':t.sourceYear?' · '+t.sourceYear+' INVENTORY':' · NEAR ROUTE'}name.append(b,small);
+    city.append(name);
     const distance=document.createElement('td');distance.className='city-distance';distance.textContent=fa(roadDistance(t.at-progress));
     const etaCell=document.createElement('td'),eta=document.createElement('span'),zone=document.createElement('span');eta.className='eta-value';zone.className='eta-zone';etaCell.append(eta,zone);
     const weather=document.createElement('td');row.append(city,distance,etaCell,weather);$('cities').append(row);weatherRows.set(row,{city:t,eta,zone,weather});
@@ -813,13 +986,28 @@ function render(){
     if(tripDeparture)ensureWeather(tripDeparture.place,tripDeparture.time);
     if(dest)ensureWeather({...dest,at:routeLength});
     if(next)ensureWeather(next);
-    if(typeof IntersectionObserver!=='undefined'){weatherObserver=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){const ref=weatherRows.get(e.target);if(ref)ensureWeather(ref.city);weatherObserver.unobserve(e.target)}},{rootMargin:'400px'});for(const row of weatherRows.keys())weatherObserver.observe(row)}
+    if(typeof IntersectionObserver!=='undefined'){weatherObserver=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){const ref=weatherRows.get(e.target);if(ref)ensureWeather(ref.city);weatherObserver.unobserve(e.target)}},{rootMargin:'400px'});
+      for(const row of weatherRows.keys())weatherObserver.observe(row)}
     else remaining.slice(0,8).forEach(ensureWeather);
   }
 }
 $('trip-retry-weather').onclick=$('retry-weather').onclick=()=>{for(const [key,value]of forecastCache)if(value.status==='error')forecastCache.delete(key);render()};
 
-$('search').onclick=search;$('query').onkeydown=e=>{if(e.key==='Enter')search()};$('fit').onclick=()=>{if(map&&routeLayer){if(document.body.classList.contains('driving')){cockpitMapFollow=false;updateCockpitMapState()}else pauseMainMapFollow();map.fitBounds(routeLayer.getBounds(),{padding:[30,30]});fitNavigationRoute()}};function driving(){enterCockpit();setScreenAwakeReason('focus',true);requestFocusFullscreen(false)}$('drive').onclick=driving;function exitDriving(){leaveCockpit();setScreenAwakeReason('focus',false);setTimeout(()=>map?.invalidateSize(),100)}$('exit').onclick=exitDriving;setInterval(()=>{if(watch!==null&&gpsTime&&Date.now()-gpsTime>25000){$('status').textContent="Location stale \u00b7 Waiting for GPS";$('hero-state').textContent="Waiting for update"}updateRouteGuidance()},5000);setInterval(()=>{if(watch!==null&&!isDemo)updateTripCells()},30000);const viaSelect=$('route-via');
+$('search').onclick=search;
+$('query').onkeydown=e=>{if(e.key==='Enter')search()};
+$('fit').onclick=()=>{if(map&&routeLayer){if(document.body.classList.contains('driving')){cockpitMapFollow=false;
+      updateCockpitMapState()}else pauseMainMapFollow();
+    map.fitBounds(routeLayer.getBounds(),{padding:[30,30]});
+    fitNavigationRoute()}};
+function driving(){enterCockpit();
+  setScreenAwakeReason('focus',true);
+  requestFocusFullscreen(false)}$('drive').onclick=driving;
+function exitDriving(){leaveCockpit();
+  setScreenAwakeReason('focus',false);
+  setTimeout(()=>map?.invalidateSize(),100)}$('exit').onclick=exitDriving;
+setInterval(()=>{if(watch!==null&&gpsTime&&Date.now()-gpsTime>25000){$('status').textContent="Location stale \u00b7 Waiting for GPS";$('hero-state').textContent="Waiting for update"}updateRouteGuidance()},5000);
+setInterval(()=>{if(watch!==null&&!isDemo)updateTripCells()},30000);
+const viaSelect=$('route-via');
 const highwayOptions=document.createElement('optgroup');
 highwayOptions.label='Northern Ontario · westbound';
 for(const [key,highway] of Object.entries(ONTARIO_HIGHWAYS))highwayOptions.append(new Option(highway.name,key));

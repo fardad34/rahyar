@@ -1,0 +1,47 @@
+{
+  "dist/app.js": {
+    "splits": 188,
+    "nonWhitespaceSha256": "144d6cde6d05320b099ff47c6a125abc197260c89e07c145ee159e034388e38a",
+    "identical": true
+  },
+  "dist/driving-hud.js": {
+    "splits": 27,
+    "nonWhitespaceSha256": "9fb3a4b74601e2ca00306bce672c1f31454b0e6bb4aa303a13b2f2f1a90d6bdc",
+    "identical": true
+  },
+  "dist/focus-dashboard.js": {
+    "splits": 36,
+    "nonWhitespaceSha256": "381fb6d104520ddfcdbd7f5191685900aea370283e789f99855a1bcba3548d25",
+    "identical": true
+  },
+  "dist/map-3d.js": {
+    "splits": 19,
+    "nonWhitespaceSha256": "d27e0c718492fe46f85e7279e56ccea73846aea9e14ab979b2441cc239320f7e",
+    "identical": true
+  },
+  "dist/map-heading.js": {
+    "splits": 4,
+    "nonWhitespaceSha256": "14a2f99372bcdf785c279ec0c78ce3e282b334737e374339f7a2cac816802792",
+    "identical": true
+  },
+  "dist/place-search.js": {
+    "splits": 11,
+    "nonWhitespaceSha256": "93a451ecef44d62a6ada3c53b46952110e96bc5af4a93879c1b71bab141fe539",
+    "identical": true
+  },
+  "dist/road-context.js": {
+    "splits": 57,
+    "nonWhitespaceSha256": "8d35b4a55c302dcf2afaa48e64d1bf0e45303f7ef2bb283a4570ae481ba9f80f",
+    "identical": true
+  },
+  "dist/screen-awake.js": {
+    "splits": 5,
+    "nonWhitespaceSha256": "f8b0923174c9724173b80b7a8b7e4b35a6970ac07adca3c0609dceeb00a3fcfc",
+    "identical": true
+  },
+  "dist/start-screen.js": {
+    "splits": 18,
+    "nonWhitespaceSha256": "6c70e64ca49aa3a58492378be8248bd799da07af95bc9402f8dcbccc5a22a92a",
+    "identical": true
+  }
+}
