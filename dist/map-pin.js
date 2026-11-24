@@ -113,6 +113,12 @@ function initMapPin() {
     $('results').replaceChildren();
     $('search-status').textContent = '';
   });
-  map?.on('click', event => selectMapPin(event.latlng));
-  navigationMap?.on('click', event => selectMapPin(event.lngLat));
+  const choosePin = event => {
+    if(event.originalEvent?._rahyarRoute||watch!==null)return;
+    if(coords.length&&!confirm('Choose a new destination on the map?'))return;
+    setMapPinPicking(true);
+    selectMapPin(event.lngLat || event.latlng);
+  };
+  map?.on('click', choosePin);
+  navigationMap?.on('click', choosePin);
 }

@@ -1,0 +1,3 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {answer}=require('../src/assistant-data.cjs');
+test('assistant never infers truck legality or fabricates unavailable weather',()=>{assert.match(answer('Is this road legal for my truck?').text,/cannot verify/);assert.match(answer('Weather at destination?').text,/unavailable/);});
+test('assistant uses provided route facts and only proposes explicit map actions',()=>{assert.equal(answer('Next border?',{border:'Ontario · 25 km'}).text,'Ontario · 25 km');assert.equal(answer('Switch to night map').action,'night');assert.equal(answer('Enable 3D').action,'3d');assert.match(answer('Change destination').text,/confirmation/);});
