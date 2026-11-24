@@ -1,6 +1,6 @@
 'use strict';
 const ROOT=new URL(self.registration.scope),ORIGIN=ROOT.origin;
-const PREFIX='rahyar-sw-v1-',REV='20261124-s1';
+const PREFIX='rahyar-sw-v1-',REV='20261124-s2';
 const CACHES={shell:PREFIX+'shell-'+REV,data:PREFIX+'data-'+REV,cdn:PREFIX+'cdn-'+REV,tiles:PREFIX+'tiles-'+REV};
 const OPTIONAL=['app-icon-512.png','truck-position.svg','trailer-icons/a-train.svg','trailer-icons/c-train.svg','trailer-icons/car-carrier.svg','trailer-icons/chassis.svg','trailer-icons/conestoga.svg','trailer-icons/dry-van.svg','trailer-icons/dump.svg','trailer-icons/flatbed.svg','trailer-icons/heated.svg','trailer-icons/livestock.svg','trailer-icons/log.svg','trailer-icons/lowboy.svg','trailer-icons/reefer.svg','trailer-icons/step-deck.svg','trailer-icons/super-b.svg','trailer-icons/tanker.svg','trailer-icons/walking-floor.svg'];
 function strategyFor(value,request={}){
