@@ -17,8 +17,9 @@ function validate(body){
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST')return res.status(405).json({error:'POST required'});
- let request;
- try{if(JSON.stringify(req.body||'').length>12000)return res.status(413).json({error:'Route request too large'});request=validate(typeof req.body==='string'?JSON.parse(req.body):req.body);}catch{return res.status(400).json({error:'Invalid route request or vehicle configuration'});}
+ let request,provider;
+ try{const raw=typeof req.body==='string'?JSON.parse(req.body):req.body;provider=raw?.provider;if(provider!==undefined&&!['tomtom','valhalla'].includes(provider))throw Error('Invalid provider');if(JSON.stringify(req.body||'').length>12000)return res.status(413).json({error:'Route request too large'});request=validate(typeof req.body==='string'?JSON.parse(req.body):req.body);}catch{return res.status(400).json({error:'Invalid route request or vehicle configuration'});}
+ if(provider==='tomtom')return require('./tomtom-route.cjs').handle(req,res,request);
  try{
   const upstream=await fetch('https://valhalla1.openstreetmap.de/route',{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'Rahyar/1.0'},body:JSON.stringify(request),signal:AbortSignal.timeout(27000)});
   const data=await upstream.json();

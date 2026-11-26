@@ -155,9 +155,14 @@ async function segmentedVehicleRoutes(points,timeout,heading,canadaOnly,alternat
     const routes=await fetchVehicleRoutes(pair,alternatives,timeout,hav(pair[0],points[0])<10?heading:null,{canadaOnly,segmenting:true,reserveExtra});
     return canadaOnly?routes.filter(r=>!routeEntersUnitedStates(r)):routes;
   },{canadaOnly,maxRequests:47,alternativeCount:alternatives,onProgress:count=>{if(typeof message==='function')message('Calculating '+vehicleLabel(activeRouteVehicle)+' route · section '+count+'…');}});
-  const {alternativeRoutes=[],...primary}=route;return [primary,...alternativeRoutes].slice(0,3);
+  const {alternativeRoutes=[],...primary}=route;const provider=typeof window!=='undefined'&&window.RahyarRoutingSettings?.getProvider?.()==='tomtom'?'tomtom':null;return [primary,...alternativeRoutes].slice(0,3).map(r=>provider?{...r,provider}:r);
 }
 async function vehicleRoutingRequest(request,timeout,purpose=''){
+  const settings=typeof window!=='undefined'?window.RahyarRoutingSettings:null;
+  if(settings?.getProvider?.()==='tomtom'){
+    const key=settings.takeTomTomRequest();
+    return getJSON('/api/route',{method:'POST',headers:{'Content-Type':'application/json','X-Rahyar-TomTom-Key':key},body:JSON.stringify({...request,provider:'tomtom'})},timeout??32000);
+  }
   const endpoint=typeof window!=='undefined'?window.RahyarRoutingSettings?.getEndpoint():null;
   if(endpoint&&endpoint!=='https://valhalla1.openstreetmap.de/route')return getJSON(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)},timeout??32000);
   // Same-origin gateway avoids client CORS/preflight and URL-size dependencies.
@@ -208,12 +213,13 @@ async function fetchVehicleRoutes(points, alternatives, timeout, heading, {canad
     Number.isFinite(route.distance) && Number.isFinite(route.duration) &&
     route.geometry?.coordinates?.length >= 2 && route.legs?.some(leg => leg.steps?.length)
   ).slice(0, 3);
-  if(typeof window!=='undefined'&&points.length===2&&alternatives>0&&valid.length&&valid.length<3&&(!segmenting||valid.length===1||localWindow))return diversifyVehicleRoutes(request,valid,r=>vehicleRoutingRequest(r,Math.min(timeout??10000,10000),requestPurpose),reserveExtra,canadaOnly);
+  if(typeof window!=='undefined'&&result.provider!=='tomtom'&&points.length===2&&alternatives>0&&valid.length&&valid.length<3&&(!segmenting||valid.length===1||localWindow))return diversifyVehicleRoutes(request,valid,r=>vehicleRoutingRequest(r,Math.min(timeout??10000,10000),requestPurpose),reserveExtra,canadaOnly);
   return valid;
 }
 
 
 function truckRouteErrorMessage(error) {
+  if(typeof window!=='undefined'&&window.RahyarRoutingSettings?.getProvider?.()==='tomtom'&&error.message)return error.message;
   if (error.code === 'RouteRegionMismatch') return 'Choose a destination in your routing region: Canada and U.S., or UK and Europe.';
   if (error.code === 'RouteCountryUnavailable') return 'Could not verify the country of the start or destination. Check your location and retry.';
   if (error.code === 'CanadaOnlyWaypoint') return 'This trip must stay in Canada. Choose a stop in Canada, or retry once your GPS location is in Canada.';

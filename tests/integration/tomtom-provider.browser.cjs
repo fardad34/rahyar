@@ -1,0 +1,12 @@
+'use strict';
+// Browser contract test only: no real TomTom key or live-route success claim.
+const {chromium}=require('@playwright/test'),assert=require('node:assert/strict');
+(async()=>{const proxy=process.env.HTTPS_PROXY;const b=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox'],proxy:proxy?{server:new URL(proxy).origin,bypass:'localhost,127.0.0.1'}:undefined});const c=await b.newContext({ignoreHTTPSErrors:true,viewport:{width:1180,height:820},serviceWorkers:'block'}),p=await c.newPage();try{
+ await p.goto(process.env.BASE_URL||'http://127.0.0.1:3061');await p.locator('#notice-agree').check();await p.locator('#notice-confirm').click();await p.waitForFunction(()=>window.RahyarRoutingSettings&&typeof vehicleRoutingRequest==='function');
+ await p.evaluate(()=>$('app-settings').showModal());await p.locator('#routing-provider').locator('..').locator('..').evaluate(el=>el.open=true);await p.locator('#routing-provider').selectOption('tomtom');
+ const missing=await p.evaluate(async()=>{try{await vehicleRoutingRequest({locations:[{lat:43,lon:-79},{lat:44,lon:-80}],costing:'auto',costing_options:{auto:{}}});return 'unexpected'}catch(e){return e.message;}});assert.match(missing,/TomTom key/);
+ let calls=0;await c.route('**/api/route',async r=>{calls++;assert.equal(r.request().postDataJSON().provider,'tomtom');assert.equal(r.request().headers()['x-rahyar-tomtom-key'],'test_key_123456789');assert(!r.request().url().includes('test_key'));await r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'TomTom key refused: Routing API access required.'})});});
+ await p.evaluate(()=>localStorage.setItem('rahyar.tomtom-key','test_key_123456789'));
+ const denied=await p.evaluate(async()=>{try{await vehicleRoutingRequest({locations:[{lat:43,lon:-79},{lat:44,lon:-80}],costing:'auto',costing_options:{auto:{}}});return 'unexpected'}catch(e){return e.message;}});assert.match(denied,/Routing API access/);assert.equal(calls,1);
+ await p.locator('#routing-provider').selectOption('valhalla');await p.reload();assert.equal(await p.evaluate(()=>window.RahyarRoutingSettings.getProvider()),'valhalla');console.log('PASS browser provider selection persists; missing key is clear; key uses header, denial is visible, no silent fallback (mocked denial contract).');
+ }finally{await c.close();await b.close();}})().catch(e=>{console.error(e.stack);process.exitCode=1});

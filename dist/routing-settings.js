@@ -27,7 +27,33 @@ function validateRoutingEndpoint(value) {
       return defaultRoutingEndpoint;
     }
   }
-  window.RahyarRoutingSettings = { getEndpoint: endpoint };
+  function provider() {
+    const selected = localStorage.getItem('rahyar.routingProvider');
+    if (selected === 'tomtom' || selected === 'valhalla') return selected;
+    // Preserve custom endpoints. Use the owner's already configured TomTom key otherwise.
+    return !localStorage.getItem(key) && localStorage.getItem('rahyar.tomtom-key') ? 'tomtom' : 'valhalla';
+  }
+  function tomtomRequest() {
+    const apiKey = localStorage.getItem('rahyar.tomtom-key') || '';
+    if (!apiKey) throw new Error('Add your TomTom key in Traffic setup before selecting TomTom routing.');
+    const month = new Date().toISOString().slice(0, 7);
+    const usageKey = 'rahyar.tomtom-routing-usage';
+    let usage;try { usage = JSON.parse(localStorage.getItem(usageKey) || '{}'); } catch { throw new Error('Routing usage storage is invalid.'); }
+    const count = usage.month === month ? Number(usage.count) || 0 : 0;
+    if (count >= 1000) throw new Error('TomTom monthly safety limit reached on this device (1,000 requests). Further requests are blocked on this device.');
+    localStorage.setItem(usageKey, JSON.stringify({month, count: count + 1}));
+    return apiKey;
+  }
+  let routeCredit=null;
+  function showAttribution(name){
+    const text='Routing © TomTom';
+    if(typeof map!=='undefined'&&map?.attributionControl){map.attributionControl.removeAttribution(text);if(name==='tomtom')map.attributionControl.addAttribution(text);}
+    if(typeof navigationMap!=='undefined'&&navigationMap&&typeof maplibregl!=='undefined'){
+      if(routeCredit){navigationMap.removeControl(routeCredit);routeCredit=null;}
+      if(name==='tomtom'){routeCredit=new maplibregl.AttributionControl({compact:true,customAttribution:text});navigationMap.addControl(routeCredit,'bottom-right');}
+    }
+  }
+  window.RahyarRoutingSettings = { getEndpoint: endpoint, getProvider: provider, takeTomTomRequest: tomtomRequest, showAttribution };
   function init() {
     const host = document.getElementById('app-settings');
     if (!host) return;
@@ -35,8 +61,15 @@ function validateRoutingEndpoint(value) {
     section.className = 'settings-section';
     const summary = document.createElement('summary');
     summary.textContent = 'Routing provider';
+    const providerLabel = document.createElement('label');
+    providerLabel.textContent = 'Route calculations ';
+    const select = document.createElement('select');select.id='routing-provider';
+    for (const [value,text] of [['tomtom','TomTom · car / truck'],['valhalla','Valhalla · public / custom']]) { const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option); }
+    select.value=provider();providerLabel.append(select);
+    const providerStatus=document.createElement('p');providerStatus.setAttribute('role','status');providerStatus.textContent='TomTom uses the key saved in Traffic setup. Safety cap: 1,000 routing requests per UTC month on this device. This does not cap other devices or account-wide billing. Keep your TomTom account on its free plan. No automatic fallback.';
+    select.onchange=()=>{localStorage.setItem('rahyar.routingProvider',select.value);providerStatus.textContent=select.value==='tomtom'?'TomTom selected. Uses your key from Traffic setup. Limit: 1,000 routing requests/month on this device. Keep the TomTom account on its free plan; this device limit cannot cap account-wide usage.':'Valhalla selected for future requests.';};
     const label = document.createElement('label');
-    label.textContent = 'Valhalla route endpoint ';
+    label.textContent = 'Custom Valhalla endpoint (only used when Valhalla is selected) ';
     const input = document.createElement('input');
     input.type = 'url';
     input.id = 'routing-endpoint';
@@ -64,6 +97,7 @@ function validateRoutingEndpoint(value) {
       try {
         const value = validateRoutingEndpoint(input.value);
         localStorage.setItem(key, value);
+        localStorage.setItem('rahyar.routingProvider','valhalla');select.value='valhalla';
         input.value = value;
         status.textContent = 'Routing provider saved. It will be used for the next request.';
       } catch (error) {
@@ -73,13 +107,14 @@ function validateRoutingEndpoint(value) {
     reset.onclick = () => {
       try {
         localStorage.removeItem(key);
+        localStorage.setItem('rahyar.routingProvider','valhalla');select.value='valhalla';
         input.value = defaultRoutingEndpoint;
         status.textContent = 'Public Valhalla selected for future requests.';
       } catch {
         status.textContent = 'Device storage unavailable.';
       }
     };
-    section.append(summary, label, save, reset, note, status);
+    section.append(summary, providerLabel, providerStatus, label, save, reset, note, status);
     host.append(section);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

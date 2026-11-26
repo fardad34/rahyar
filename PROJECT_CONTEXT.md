@@ -74,3 +74,6 @@ See [overall review, precise capabilities, tests and rollback](docs/AUDIO_LAYOUT
 ## 24 November: blank-map/search recovery
 
 [Reproduction and verified recovery](docs/MAP_RECOVERY_20261124.md): actual basemap tile readiness now controls vector visibility, preserving Leaflet streets when vector data fails; real map-layer Retry restores vector rendering. Destination selection previews without GPS and permission errors remain visible. The offline status banner is no longer hidden by the shell CSS. The exact user's iPad/network fault remains unverified; failure injection and normal Chromium route regressions passed.
+
+## TomTom routing preview — 26 November 2026
+See docs/TOMTOM_ROUTING_20261126.md. Device key required, explicit provider choice, local 1,000/month guard only; live TomTom and account entitlement remain unverified. Main/production/Supabase unchanged.

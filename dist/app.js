@@ -327,6 +327,7 @@ async function discoverCities(token,revision=routeRevision){
 }
 function activateRoute(route,via,c,token) {
   activeNavigationRoute=route;
+  window.RahyarRoutingSettings?.showAttribution?.(route.provider);
   window.RahyarJournal?.routeSelected(route,guidanceOffRoute?'off-route reroute':selectedAlternative?'driver selection':'provider');
   const revision=++routeRevision;
   prepare(route.geometry.coordinates,route.distance);
