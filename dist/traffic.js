@@ -223,10 +223,11 @@ function initTraffic() {
   } catch {}
   // Never automatically start manual traffic on a new page visit.
   if (trafficMode === 'on') trafficMode='city';
-  loadCatalog().then(cities=>{trafficCities=cities;applyTrafficMode();}).catch(()=>{});
+  // City traffic catalog is requested only when traffic is configured.
+
   setInterval(()=>{
     if (!document.hidden) applyTrafficMode();
-    if (!trafficCities.length && !trafficCityLoading && !document.hidden) {
+    if (trafficKey && trafficMode==='city' && !trafficCities.length && !trafficCityLoading && !document.hidden) {
       trafficCityLoading=true;
       loadCatalog().then(cities=>{trafficCities=cities;applyTrafficMode();}).catch(()=>{}).finally(()=>{trafficCityLoading=false});
     }

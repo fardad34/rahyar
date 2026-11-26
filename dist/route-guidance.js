@@ -28,7 +28,7 @@ function maneuverInstruction(step, previousRoad) {
     step.ref && previousRoad.ref ? step.ref === previousRoad.ref :
     step.name && step.name === previousRoad.name
   )) {
-    return 'Stay on ' + road;
+    return direction ? 'Keep ' + direction + ' to stay on ' + road : 'Stay on ' + road;
   } else if (type === 'fork' || type === 'merge') {
     instruction = (type === 'fork' ? 'Keep' : 'Merge') + (direction ? ' ' + direction : ' ahead');
   } else if (type === 'end of road' && direction) {
@@ -66,7 +66,7 @@ function buildRouteManeuvers(route) {
         if (routeRoads.at(-1)?.road !== road) routeRoads.push({at: distance, road});
       }
       if (type && !(type === 'arrive' && index < legs.length - 1) && !['depart', 'notification', 'new name'].includes(type)) {
-        maneuvers.push({at: distance, instruction: maneuverInstruction(step, previousRoad), symbol: maneuverSymbol(step.maneuver), direction: step.maneuver.modifier?.includes('left') ? 'left' : step.maneuver.modifier?.includes('right') ? 'right' : null});
+        maneuvers.push({speech:{type,exit:step.exits?.replace(/;/g,' / '),roundaboutExit:step.maneuver.exit,road:routeRoadLabel(step)},at: distance, instruction: maneuverInstruction(step, previousRoad), symbol: maneuverSymbol(step.maneuver), direction: step.maneuver.modifier?.includes('left') ? 'left' : step.maneuver.modifier?.includes('right') ? 'right' : null});
       }
       if (step.distance > 0) previousRoad = step;
       distance += Number.isFinite(step.distance) ? step.distance : 0;
@@ -95,6 +95,7 @@ function updateRouteGuidance() {
   let symbol = '';
   let currentRoad = '';
   if (isDemo) instruction = 'Demo map · Start a live trip for turn guidance';
+  else if(watch===null&&coords.length&&document.body.classList.contains('navigation-redesign')) instruction='Saved route · Start to resume GPS guidance';
   else if (watch !== null) {
     if (!$('retry-route').hidden) instruction = 'Route unavailable · Retry route';
     else if (!gpsTime || !lastPos || Date.now() - gpsTime > 25000) instruction = 'Waiting for a fresh GPS fix';
@@ -124,9 +125,12 @@ function updateRouteGuidance() {
   if (label.textContent !== instruction) label.textContent = instruction;
   $('focus-guidance-distance').textContent = distance;
   const road = $('focus-current-road');
-  road.textContent = currentRoad ? 'On ' + currentRoad : '';
+  road.textContent = currentRoadLabelText(currentRoad);
   road.hidden = !currentRoad;
   const icon = $('focus-guidance-symbol');
   icon.textContent = symbol;
   icon.hidden = !symbol;
 }
+
+// Road aliases/route references get a dedicated second line in the fixed slot.
+function currentRoadLabelText(road){return road?'On '+String(road).replace(/\s*[;·]\s*/, '\n'):'';}

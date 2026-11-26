@@ -18,6 +18,12 @@ function parsePhotonPlaces(data,query){
     return {name,en:name,addressLabel:looksLikeAddress(query)?label:null,coord:f.geometry.coordinates,country:p.countrycode.toUpperCase(),locality:p.city||p.town||p.village||'',regionLabel:p.state||'',isAddress:!!street,matchNote:numbered&&!p.housenumber?'Street only — house number not confirmed':''};
   });
 }
+function localFacilityMatches(query,facilities) {
+  const normalize=value=>String(value||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/\bwassi\b/g,'wasi').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+  const tokens=normalize(query).split(/\s+/).filter(Boolean);
+  if(!tokens.length||tokens.join('').length<3)return [];
+  return facilities.filter(f=>f.kind!=='scale'&&tokens.every(token=>normalize(f.name).includes(token))).slice(0,12).map(f=>({...f,en:f.name,regionLabel:f.region||'',matchNote:(f.direction?f.direction+' · ':'')+'Inventory point; verify signed entrance. Operating status is not supplied by this inventory.'}));
+}
 async function searchPlaces(){
   if(mapPinLookupPending)return;
   if(pendingMapPin){
@@ -30,14 +36,26 @@ async function searchPlaces(){
   if(placeSearchMode==='watch'&&looksLikeAddress(q)){$('search-status').textContent='Enter a city name for the watchlist.';return}
   $('search').disabled=true;$('results').replaceChildren();$('search-status').textContent='Searching places…';
   try{
-    if(!looksLikeAddress(q)){let catalog=[];try{catalog=await loadCatalog()}catch{}if(id!==requestId)return;const local=localCityMatches(q,catalog);if(local.length){showCityResults(local);$('search-status').textContent=integer(local.length)+' results. Select a match.';return}}
+    if(!looksLikeAddress(q)){let catalog=[];
+      try{catalog=await loadCatalog()}catch{}if(id!==requestId)return;
+      const local=localCityMatches(q,catalog);
+      if(local.length){showCityResults(local);
+        $('search-status').textContent=integer(local.length)+' results. Select a match.';
+        return}}
+    if(placeSearchMode!=='watch'&&typeof window!=='undefined'){if(!window.RAHYAR_FACILITY_CATALOG&&window.loadFacilityCatalog)try{await window.loadFacilityCatalog();}catch{}if(id!==requestId)return;const facilities=localFacilityMatches(q,window.RAHYAR_FACILITY_CATALOG?.facilities||[]);
+      if(facilities.length){showCityResults(facilities);
+        $('search-status').textContent=facilities.length+' inventory matches. Verify travel direction and signed entrance; operating status is separate.';
+        return;}}
     let matches=[];
-    if(looksLikeAddress(q))try{const params=new URLSearchParams({SingleLine:q,f:'json',sourceCountry:Object.values(supportedGeocodingCountries).join(','),maxLocations:'6',outFields:'Match_addr,Addr_type,Country,City,Region,Postal,AddNum',forStorage:'false'});matches=parseAddressCandidates(await getJSON('https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?'+params,{},12000),q)}catch{}
+    if(looksLikeAddress(q))try{const params=new URLSearchParams({SingleLine:q,f:'json',sourceCountry:Object.values(supportedGeocodingCountries).join(','),maxLocations:'6',outFields:'Match_addr,Addr_type,Country,City,Region,Postal,AddNum',forStorage:'false'});
+      matches=parseAddressCandidates(await getJSON('https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?'+params,{},12000),q)}catch{}
     if(!matches.length)try{
       const params=new URLSearchParams({q,limit:'12',lang:'en'});
       for(const code of Object.keys(supportedGeocodingCountries))params.append('countrycode',code);
       matches=parsePhotonPlaces(await getJSON('https://photon.komoot.io/api/?'+params,{},10000),q);
     }catch{}
-    if(id!==requestId)return;showCityResults(matches);$('search-status').textContent=matches.length?'Check the address before selecting.':'No matching place found. Check the address or try a nearby street. Online search may be unavailable.';
+    if(id!==requestId)return;
+    showCityResults(matches);
+    $('search-status').textContent=matches.length?'Check the address before selecting.':'No matching place found. Check the address or try a nearby street. Online search may be unavailable.';
   }finally{if(id===requestId)$('search').disabled=false}
 }

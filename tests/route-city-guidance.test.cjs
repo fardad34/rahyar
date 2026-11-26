@@ -40,7 +40,7 @@ assert.equal(vm.runInContext('routeRoads[1].at',ctx),1200);
 assert.equal(vm.runInContext("maneuverInstruction({name:'Main Street',maneuver:{type:'off ramp',modifier:'right'}})",ctx),
   'Take the exit on the right onto Main Street');
 
-assert.equal(vm.runInContext("maneuverInstruction({name:'Trans-Canada Highway',ref:'1',maneuver:{type:'fork',modifier:'right'}},{name:'Trans-Canada Highway',ref:'1'})",ctx),'Stay on Trans-Canada Highway · 1');
+assert.equal(vm.runInContext("maneuverInstruction({name:'Trans-Canada Highway',ref:'1',maneuver:{type:'fork',modifier:'right'}},{name:'Trans-Canada Highway',ref:'1'})",ctx),'Keep right to stay on Trans-Canada Highway · 1');
 assert.match(vm.runInContext("maneuverInstruction({name:'Trans-Canada Highway',ref:'1',exits:'36',maneuver:{type:'fork',modifier:'right'}},{name:'Trans-Canada Highway',ref:'1'})",ctx),/^Take exit 36/);
 
 const test = require('node:test');

@@ -11,10 +11,11 @@ async function getJSON(url,options={},timeout=22000){
         if(!response.ok){
           const error=new Error('HTTP '+response.status);
           error.status=response.status;
-          if(response.status===400 && typeof response.json==='function'){
+          if((response.status===400 || options.headers?.['X-Rahyar-TomTom-Key']) && typeof response.json==='function'){
             const detail=await response.json().catch(()=>null);
             error.code=detail?.code;
             error.errorCode=detail?.error_code;
+            if(options.headers?.['X-Rahyar-TomTom-Key']&&typeof detail?.error==='string')error.message=detail.error.slice(0,300);
           }
           throw error;
         }

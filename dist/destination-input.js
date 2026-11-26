@@ -1,0 +1,237 @@
+'use strict';
+function parseDestinationInput(value) {
+  let text = String(value || '')
+    .trim()
+    .slice(0, 2000);
+  let url;
+  try {
+    url = new URL(text);
+  } catch {}
+  if (url) {
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+      throw Error('Use an address or a public HTTP(S) map link.');
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    const google = host.replace(/^maps\./, '');
+    const known =
+      [
+        'google.com',
+        'google.ca',
+        'google.co.uk',
+        'google.de',
+        'google.fr',
+        'google.es',
+        'google.it',
+        'google.nl',
+        'google.be',
+        'google.ch',
+        'google.at',
+        'google.ie',
+        'google.pt',
+        'google.se',
+        'google.no',
+        'google.dk',
+        'google.fi',
+        'google.pl',
+        'google.cz',
+        'google.co.in',
+      ].includes(google) || ['maps.apple.com', 'openstreetmap.org'].includes(host);
+    if (!known) throw Error('This link format is not supported. Paste the street address instead.');
+    text =
+      url.searchParams.get('destination') ||
+      url.searchParams.get('daddr') ||
+      url.searchParams.get('query') ||
+      url.searchParams.get('q') ||
+      url.searchParams.get('ll') ||
+      decodeURIComponent(url.pathname.match(/\/place\/([^/]+)/)?.[1]?.replaceAll('+', ' ') || '');
+    const coord = url.href.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+    if (!text && coord) text = coord[1] + ',' + coord[2];
+    if (!text) throw Error('Short map links cannot be resolved offline. Paste the full address.');
+  }
+  const match = text.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (match) {
+    const lat = Number(match[1]),
+      lon = Number(match[2]);
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) throw Error('Invalid map coordinates.');
+    return { query: text, coord: [lon, lat] };
+  }
+  if (!text) throw Error('Paste an address first.');
+  return { query: text };
+}
+(() => {
+  function init() {
+    if (document.getElementById('destination-voice') || !document.getElementById('query')) return;
+    const row = document.createElement('div');
+    row.className = 'nav-input-actions';
+    const voice = document.createElement('button'),
+      paste = document.createElement('button');
+    voice.type = paste.type = 'button';
+    voice.className = paste.className = 'secondary';
+    voice.id = 'destination-voice';
+    voice.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg><span>Speak destination</span>';
+    paste.id = 'destination-paste';
+    paste.textContent = 'Paste address / map link';
+    row.append(voice, paste);
+    document.querySelector('.searchrow').after(row);
+    const status = (text) => (document.getElementById('search-status').textContent = text);
+    function apply(value) {
+      const place = parseDestinationInput(value);
+      document.getElementById('query').value = place.query;
+      if (place.coord) {
+        if (
+          typeof watch !== 'undefined' &&
+          watch !== null &&
+          !confirm('Change the destination and recalculate your active route?')
+        )
+          return;
+        setSearchedDestination(
+          { name: place.query, en: place.query, coord: place.coord, mapPin: true },
+          true,
+        );
+      } else document.getElementById('search').click();
+    }
+    paste.onclick = async () => {
+      try {
+        if (!navigator.clipboard?.readText)
+          throw Error('Clipboard access is unavailable. Paste into the destination field.');
+        apply(await navigator.clipboard.readText());
+      } catch (error) {
+        status(
+          error.name === 'NotAllowedError'
+            ? 'Clipboard permission was denied. Paste into the destination field.'
+            : error.message,
+        );
+      }
+    };
+    let recognition = null;
+    voice.onclick = () => {
+      if (recognition) {
+        recognition.stop();
+        return;
+      }
+      const Engine = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Engine) {
+        status(
+          'Voice destination input is unavailable in this browser. Use saved places, map selection or paste. On iOS, microphone permission and browser support vary.',
+        );
+        return;
+      }
+      try {
+        recognition = new Engine();
+        const lang = document.documentElement.lang || 'en';
+        recognition.lang =
+          { en: 'en-CA', fa: 'fa-IR', fr: 'fr-CA', hi: 'hi-IN', es: 'es-ES', de: 'de-DE' }[lang] || 'en-CA';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.onstart = () => {
+          voice.setAttribute('aria-pressed', 'true');
+          status('Listening… tap again to stop. Voice recognition may use your browser’s online service.');
+        };
+        recognition.onresult = (e) => {
+          const text = e.results?.[0]?.[0]?.transcript;
+          if (text)
+            try {
+              apply(text);
+            } catch (error) {
+              status(error.message);
+            }
+        };
+        recognition.onerror = (e) =>
+          status(
+            {
+              'not-allowed':
+                'Microphone permission was denied. Allow it in browser settings or use paste/saved places.',
+              'audio-capture': 'No microphone is available.',
+              network: 'Voice recognition could not connect. Use saved places or paste.',
+            }[e.error] || 'Voice input stopped (' + e.error + '). Try again or use paste.',
+          );
+        recognition.onend = () => {
+          recognition = null;
+          voice.setAttribute('aria-pressed', 'false');
+        };
+        recognition.start();
+      } catch {
+        recognition = null;
+        voice.setAttribute('aria-pressed', 'false');
+        status('Voice input could not start. Use paste or a saved destination.');
+      }
+    };
+    function motion() {
+      const moving =
+        typeof watch !== 'undefined' &&
+        watch !== null &&
+        typeof isDemo !== 'undefined' &&
+        !isDemo &&
+        typeof lastSpeedMps !== 'undefined' &&
+        lastSpeedMps > 1.4 &&
+        typeof gpsTime !== 'undefined' &&
+        Date.now() - gpsTime < 15000 &&
+        typeof lastAccuracyMeters !== 'undefined' &&
+        lastAccuracyMeters <= 35;
+      const input = document.getElementById('query');
+      input.readOnly = !!moving;
+      input.setAttribute(
+        'aria-description',
+        moving
+          ? 'Use voice, saved destinations or map selection while moving.'
+          : 'Type an address while parked.',
+      );
+    }
+    motion();
+    setInterval(motion, 1000);
+    const details = document.createElement('details');
+    details.className = 'destination-saved-shortcuts';
+    const heading = document.createElement('summary');
+    heading.textContent = 'Saved destinations · one tap';
+    const list = document.createElement('div');
+    list.className = 'nav-saved-shortcuts';
+    details.append(heading, list);
+    row.after(details);
+    function render() {
+      list.replaceChildren();
+      for (const item of typeof savedPlaces !== 'undefined' ? savedPlaces : []) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary';
+        b.textContent = item.label;
+        b.onclick = () => {
+          if (
+            typeof watch !== 'undefined' &&
+            watch !== null &&
+            !confirm('Change the destination and recalculate your active route?')
+          )
+            return;
+          setSearchedDestination(item.place, true);
+        };
+        list.append(b);
+      }
+      details.hidden = !list.children.length;
+    }
+    function translate() {
+      const words = {
+        fa: ['گفتن مقصد', 'چسباندن آدرس / لینک نقشه', 'مقصدهای ذخیره‌شده · یک لمس'],
+        fr: ['Dicter la destination', 'Coller une adresse / un lien', 'Destinations enregistrées'],
+        hi: ['गंतव्य बोलें', 'पता / नक्शा लिंक पेस्ट करें', 'सहेजे गए गंतव्य'],
+        es: ['Decir destino', 'Pegar dirección / enlace', 'Destinos guardados'],
+        de: ['Ziel sprechen', 'Adresse / Kartenlink einfügen', 'Gespeicherte Ziele'],
+      }[document.documentElement.lang] || [
+        'Speak destination',
+        'Paste address / map link',
+        'Saved destinations · one tap',
+      ];
+      voice.querySelector('span').textContent = words[0];
+      paste.textContent = words[1];
+      heading.textContent = words[2];
+    }
+    translate();
+    new MutationObserver(translate).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['lang'],
+    });
+    render();
+    const picker = document.getElementById('saved-places');
+    if (picker) new MutationObserver(render).observe(picker, { childList: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

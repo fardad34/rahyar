@@ -1,0 +1,253 @@
+/* Dashboard-distance readability; preserve all existing nodes and handlers. */
+body {
+  font-size: 16px;
+}
+.navigation-redesign :is(button, summary, select, input:not([type='checkbox']):not([type='radio'])) {
+  min-height: 48px !important;
+}
+.navigation-redesign button {
+  min-width: 48px !important;
+}
+.navigation-redesign
+  :is(label, p, small, .small, .privacy, .eyebrow, .badge, .stat label, th, .notice-check) {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.navigation-redesign :is(.nav-feature-dialog, .nav-search-panel, .nav-trip-sheet) {
+  background: var(--panel, #172635) !important;
+  color: var(--ink, #edf3ff) !important;
+  border-color: var(--line, #51677a) !important;
+}
+.navigation-redesign
+  :is(
+    .nav-trip-meta,
+    .nav-trip-time > span,
+    .nav-trip-destination,
+    .focus-place-distance,
+    .focus-place-eta,
+    .focus-place-weather,
+    .weather-desc,
+    .weather-placeholder,
+    .focus-section-label,
+    .nav-search-panel small,
+    .nav-search-panel p,
+    .nav-feature-dialog small
+  ) {
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  color: var(--muted, #b8c7d6) !important;
+}
+.navigation-redesign .nav-trip-sheet :is(.focus-place-name, .city-name b) {
+  font-size: 16px !important;
+  color: var(--ink, #edf3ff) !important;
+  line-height: 1.3 !important;
+}
+.navigation-redesign
+  .nav-trip-sheet
+  :is(.focus-place-distance span, .focus-place-distance small, .focus-place-eta strong, .weather-main) {
+  font-size: 14px !important;
+  color: var(--ink, #edf3ff) !important;
+}
+.navigation-redesign .nav-trip-time > strong {
+  color: var(--accent, #79deb2);
+  font-size: 28px;
+}
+.navigation-redesign .nav-trip-sheet .weather-desc {
+  display: block !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.navigation-redesign .nav-header {
+  height: 52px;
+}
+.navigation-redesign .nav-header-tools {
+  gap: 5px;
+}
+.navigation-redesign .nav-header-tools .nav-icon {
+  width: 48px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+}
+.navigation-redesign .nav-header-tools .nav-ask-button {
+  width: auto !important;
+}
+.navigation-redesign .nav-right-controls .nav-icon {
+  width: 48px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  flex-shrink: 0;
+}
+.navigation-redesign .nav-right-controls {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100dvh - 360px - 70px);
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-right: 3px;
+}
+.navigation-redesign .nav-right-controls .nav-zoom-group {
+  flex-shrink: 0;
+}
+.navigation-redesign .nav-right-controls .nav-zoom-group .nav-icon {
+  height: 48px !important;
+}
+.nav-input-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.nav-input-actions button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  padding: 10px;
+}
+.nav-input-actions svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.nav-saved-shortcuts {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+}
+.nav-saved-shortcuts button {
+  text-align: start;
+  font-size: 16px;
+}
+.navigation-redesign #nav-audio-dialog {
+  overflow: auto;
+  max-height: calc(100dvh - 24px);
+}
+[dir='rtl'] .nav-search-panel,
+[dir='rtl'] .nav-feature-dialog {
+  text-align: right;
+}
+[dir='rtl'] .nav-input-actions {
+  direction: rtl;
+}
+[dir='rtl'] #query {
+  direction: auto;
+}
+@media (max-width: 600px) {
+  .navigation-redesign .nav-header {
+    left: 10px;
+    right: 10px;
+    gap: 5px;
+  }
+  .navigation-redesign .nav-brand b {
+    font-size: 14px;
+  }
+  .navigation-redesign .nav-brand strong {
+    font-size: 14px;
+  }
+  .navigation-redesign #nav-vehicle {
+    min-width: 58px !important;
+    padding: 4px !important;
+  }
+  .navigation-redesign #nav-vehicle span {
+    display: none;
+  }
+  .navigation-redesign .nav-search-panel {
+    top: 78px;
+    max-height: calc(100dvh - 202px);
+  }
+  .navigation-redesign .nav-right-controls {
+    top: 294px;
+    max-height: calc(100dvh - 294px - 126px);
+  }
+  .navigation-redesign .nav-trip-sheet .focus-place-row {
+    grid-template-columns: minmax(90px, 1fr) 87px 80px !important;
+    gap: 5px;
+  }
+  .navigation-redesign .nav-trip-destination {
+    font-size: 14px;
+  }
+  .navigation-redesign .nav-ask-label {
+    display: none;
+  }
+}
+@media (max-height: 550px) {
+  .navigation-redesign .nav-right-controls {
+    top: 66px;
+    max-height: calc(100dvh - 140px);
+  }
+  .navigation-redesign .nav-search-panel {
+    top: 66px;
+    max-height: calc(100dvh - 80px);
+  }
+  .navigation-redesign .nav-turn {
+    top: 78px;
+  }
+}
+#site-notice :is(label, small) {
+  font-size: 16px !important;
+  line-height: 1.5;
+}
+#site-notice :is(button, select, .notice-check) {
+  min-height: 48px !important;
+}
+.navigation-redesign .nav-search-panel :is(label, span, small, button),
+.navigation-redesign :is(.route-legend, #nav-vehicle, #message, .nav-speed-caption, .nav-actual-speed span) {
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+.navigation-redesign .nav-search-panel :is(summary, select) {
+  font-size: 14px !important;
+  color: var(--ink, #edf3ff) !important;
+}
+.navigation-redesign .nav-brand strong {
+  font-size: 14px !important;
+}
+.navigation-redesign .nav-search-panel :is(.secondary, .results button, input, select) {
+  background: var(--theme-input, var(--panel, #172635)) !important;
+  color: var(--ink, #edf3ff) !important;
+  border-color: var(--line, #51677a) !important;
+}
+.navigation-redesign .nav-sheet-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 48px !important;
+  min-height: 48px !important;
+  z-index: 2;
+  align-items: flex-start;
+  padding-top: 8px !important;
+}
+.navigation-redesign .nav-trip-sheet {
+  padding-top: 24px;
+}
+.navigation-redesign .nav-search-panel summary {
+  font-size: 14px !important;
+}
+@media (max-height: 550px) {
+  .navigation-redesign .nav-turn {
+    top: 70px;
+    padding: 10px 12px;
+    width: calc(100vw - 220px);
+    min-height: 0;
+    max-height: 110px;
+  }
+  .navigation-redesign .nav-turn #focus-guidance-instruction {
+    font-size: 16px !important;
+    -webkit-line-clamp: 2;
+  }
+  .navigation-redesign .nav-turn #focus-guidance-distance {
+    font-size: 24px;
+  }
+  .navigation-redesign .nav-turn > svg {
+    width: 30px;
+    height: 30px;
+  }
+}
+.navigation-redesign .nav-search-panel strong {
+  font-size: 14px !important;
+}
+.navigation-redesign :is(#hud-change-distance,#hud-road-unit,#gps-status,#search-status){font-size:14px!important;line-height:1.4!important}
+.navigation-redesign summary{font-size:16px!important}

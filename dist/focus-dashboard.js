@@ -79,18 +79,45 @@ function refreshFocusSummary(loadForecasts=false){
   if(key!==focusRowsKey){
     focusRowsKey=key;focusRows=[];const box=$('focus-trip-summary');box.replaceChildren();
     const label=text=>{const node=document.createElement('div');node.className='focus-section-label';node.textContent=text;box.append(node)};
-    const row=(city,kind)=>{const el=document.createElement('div');el.className='focus-place-row '+kind;const name=document.createElement('strong'),distance=document.createElement('strong'),etaBox=document.createElement('div'),eta=document.createElement('strong'),zone=document.createElement('small'),weather=document.createElement('div');name.className='focus-place-name';name.textContent=city.en||city.name;distance.className='focus-place-distance';const unit=document.createElement('small');const value=document.createElement('span');distance.append(value,unit);etaBox.className='focus-place-eta';weather.className='focus-place-weather';etaBox.append(eta,zone);el.append(name,distance,etaBox,weather);box.append(el);focusRows.push({city,distance:value,unit,eta,zone,weather})};
+    const row=(city,kind)=>{const el=document.createElement('div');
+      el.className='focus-place-row '+kind;
+      const name=document.createElement('strong'),distance=document.createElement('strong'),etaBox=document.createElement('div'),eta=document.createElement('strong'),zone=document.createElement('small'),weather=document.createElement('div');
+      name.className='focus-place-name';
+      name.textContent=city.en||city.name;
+      distance.className='focus-place-distance';
+      const unit=document.createElement('small');
+      const value=document.createElement('span');
+      distance.append(value,unit);
+      etaBox.className='focus-place-eta';
+      weather.className='focus-place-weather';
+      etaBox.append(eta,zone);
+      el.append(name,distance,etaBox,weather);
+      box.append(el);
+      focusRows.push({city,distance:value,unit,eta,zone,weather})};
     const empty=text=>{const node=document.createElement('p');node.className='focus-empty';node.textContent=text;box.append(node)};
     label('FINAL DESTINATION');row(chosen.final,'focus-final');
-    const headings=document.createElement('div');headings.className='focus-column-labels';for(const text of ['NEXT 3 CITIES','DISTANCE','ARRIVAL','WEATHER']){const span=document.createElement('span');span.textContent=text;headings.append(span)}box.append(headings);
+    const headings=document.createElement('div');
+    headings.className='focus-column-labels';
+    for(const text of ['NEXT 3 CITIES','DISTANCE','ARRIVAL','WEATHER']){const span=document.createElement('span');
+      span.textContent=text;
+      headings.append(span)}box.append(headings);
     chosen.next.forEach(c=>row(c,'focus-city'));if(!chosen.next.length)empty(coords.length?'No more mapped cities before your destination.':'Start a trip to see the next cities.');
-    label('NEXT TRUCK STOP / REST AREA');if(chosen.stop)row(chosen.stop,'focus-stop');else empty(facilityScanBusy?'Finding stops along your route…':'No truck stop or rest area identified ahead in loaded data.');
+    label('NEXT TRUCK STOP / REST AREA');
+    if(chosen.stop)row(chosen.stop,'focus-stop');
+    else empty(facilityScanBusy?'Finding stops along your route…':'No truck stop or rest area identified ahead in loaded data.');
     label('NEXT GOVERNMENT INSPECTION / WEIGH STATION');
     if(chosen.inspection){row(chosen.inspection,'focus-stop');box.append(createStationReportPanel(chosen.inspection));}else empty(facilityScanBusy?'Finding stations…':'No mapped station ahead.');
   }
   $('focus-trip-summary').querySelector('.station-report-panel')?.refreshStatus();
   for(const ref of focusRows){
-    const label=arrivalLabel(arrivalFor(ref.city),ref.city);ref.distance.textContent=coords.length?fa(roadDistance(ref.city.at-progress)):'—';ref.unit.textContent=distanceUnit();ref.eta.textContent=label.time;ref.zone.textContent=label.detail;ref.eta.parentElement.title=label.detail;renderWeather(ref.weather,ref.city);if(loadForecasts&&!isDemo)ensureWeather(ref.city)}
+    const label=arrivalLabel(arrivalFor(ref.city),ref.city);
+    ref.distance.textContent=coords.length?fa(roadDistance(ref.city.at-progress)):'—';
+    ref.unit.textContent=distanceUnit();
+    ref.eta.textContent=label.time;
+    ref.zone.textContent=label.detail;
+    ref.eta.parentElement.title=label.detail;
+    renderWeather(ref.weather,ref.city);
+    if(loadForecasts&&!isDemo)ensureWeather(ref.city)}
 }
 function followCockpitPosition(c,resetZoom=false){
   if(!c||!document.body.classList.contains('driving'))return;
@@ -98,12 +125,13 @@ function followCockpitPosition(c,resetZoom=false){
   followNavigationPosition(c,resetZoom);
   if(map&&cockpitMapFollow&&!$('map').hidden){
     const expanded=document.body.classList.contains('map-expanded');
-    const drop=Math.min(expanded?38:76,map.getSize().y*.19);
+    const frame=document.body.classList.contains('navigation-redesign')&&typeof rahyarCameraFrame==='function'?rahyarCameraFrame(map.getSize().x,map.getSize().y):null;
+    const drop=frame?frame.y-map.getSize().y/2:Math.min(expanded?38:76,map.getSize().y*.19);
     const autoZoom=typeof followingZoom==='function'?followingZoom():null;
     const zoom=autoZoom===null ? (resetZoom?17:map.getZoom()) : Math.round(autoZoom);
     const scale=map.getZoomScale(zoom);
     const position=map.latLngToContainerPoint([c[1],c[0]]);
-    const center=map.containerPointToLatLng(position.subtract([0,drop/scale]));
+    const center=map.containerPointToLatLng(position.subtract([frame?(frame.x-map.getSize().x/2)/scale:0,drop/scale]));
     if(resetZoom||zoom!==map.getZoom())map.setView(center,zoom,{animate:false});
     else map.panTo(center,{animate:true,duration:.35});
   }
@@ -115,6 +143,16 @@ function updateCockpitMapState(){
   $('focus-follow').title=cockpitMapFollow?'Following GPS':'Return to your vehicle';
 }
 function startCockpitLayout(){
+  if(document.body.classList.contains('navigation-redesign')){
+    document.body.classList.add('driving');
+    cockpitMapFollow=true;
+    focusRowsKey='';
+    refreshFocusSummary(true);
+    updateDrivingHud();
+    updateRouteGuidance();
+    setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress),true);},120);
+    return;
+  }
   const region=document.querySelector('.region-panel'),mapPanel=document.querySelector('.map-panel');
   if(!regionHome){regionHome=document.createComment('region home');region.before(regionHome)}
   $('focus-region-footer').append(region);
@@ -125,6 +163,7 @@ function startCockpitLayout(){
   setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress),true)},100);
 }
 function stopCockpitLayout(){
+  if(document.body.classList.contains('navigation-redesign')){document.body.classList.remove('driving','map-expanded');resizeCockpitMap();return;}
   setFocusMapExpanded(false);
   $('dashboard-media').open=false;
   layoutFocusMapOverlays(false);
@@ -133,7 +172,8 @@ function stopCockpitLayout(){
   if(regionHome?.parentNode)regionHome.parentNode.insertBefore(region,regionHome.nextSibling);
   if(cockpitMapHome?.parentNode&&mapPanel)cockpitMapHome.parentNode.insertBefore(mapPanel,cockpitMapHome.nextSibling);
   if(navigationMap){navigationMap.resize();if(!mainMapBrowsing)fitNavigationRoute()}
-  if(cockpitFullscreenOwned)exitFocusFullscreen();setTimeout(()=>{if(map){map.invalidateSize({pan:false});if(routeLayer&&!mainMapBrowsing)map.fitBounds(routeLayer.getBounds(),{padding:[30,30]})}},120);
+  if(cockpitFullscreenOwned)exitFocusFullscreen();
+  setTimeout(()=>{if(map){map.invalidateSize({pan:false});if(routeLayer&&!mainMapBrowsing)map.fitBounds(routeLayer.getBounds(),{padding:[30,30]})}},120);
 }
 function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement}
 function standaloneDisplay(){return !!navigator.standalone||!!window.matchMedia?.('(display-mode: standalone)').matches||!!window.matchMedia?.('(display-mode: fullscreen)').matches}
@@ -149,8 +189,10 @@ async function exitFocusFullscreen(){
   const exit=document.exitFullscreen||document.webkitExitFullscreen;cockpitFullscreenOwned=false;
   if(fullscreenElement()&&exit)try{await exit.call(document)}catch{}
 }
-function resizeCockpitMap(){setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress))},100);$('focus-fullscreen').textContent=fullscreenElement()?'Windowed view':'Full screen'}
+function resizeCockpitMap(){setTimeout(()=>{navigationMap?.resize();map?.invalidateSize({pan:false});followCockpitPosition(lastPos||pointOnRoute(progress))},100);
+  $('focus-fullscreen').textContent=fullscreenElement()?'Windowed view':'Full screen'}
 function layoutFocusMapOverlays(active) {
+  if(document.body.classList.contains('navigation-redesign'))return;
   const area = $('focus-map-area');
   const controls = area.querySelector('.focus-map-controls');
   const heading = area.querySelector('.map-heading');
