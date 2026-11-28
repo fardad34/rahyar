@@ -59,6 +59,7 @@ function currentStationObservation(station) {
 
 function stationThreshold(distance, stages) {
   if (distance < 0) return 0;
+  if (distance <= 150 && stages.has(3) && !stages.has(0.15)) return 0.15;
   if (distance <= 3000 && !stages.has(3)) return 3;
   if (distance > 3000 && distance <= 20000 && !stages.has(20)) return 20;
   return 0;
@@ -68,7 +69,8 @@ function updateStationWarning() {
   if (stationWarningSession !== session) {
     stationWarnings.clear();
     stationWarningSession = session;
-    $('station-warning-notice').textContent = '';
+    clearTimeout(stationNoticeTimer);
+    $('station-warning-notice').replaceChildren();
   }
   if (watch === null || activeRouteVehicle !== 'truck' || isDemo || !coords.length ||
       guidanceOffRoute || !gpsTime || Date.now()-gpsTime > 15000 ||
@@ -78,27 +80,39 @@ function updateStationWarning() {
   const key = stationIdentity(station);
   if (!stationWarnings.has(key)) stationWarnings.set(key,new Set());
   const stages = stationWarnings.get(key);
-  const stage = stationThreshold(station.at-progress,stages);
+  const stage = stationThreshold(Math.max(0,station.at-progress),stages);
   if (!stage) return;
   stages.add(stage);
   if (stage === 3) stages.add(20);
   const observation = currentStationObservation(station);
   const status = observation && observation.status!=='unknown' ? 'Drivers report '+observation.status+'; not official' : 'Current status unknown';
-  const distance = usesMiles(currentCountry) ? (stage === 20 ? '12.4 miles' : '1.9 miles') : stage+' km';
+  const distance = stage===0.15 ? (usesMiles(currentCountry)?'500 ft':'150 m') : usesMiles(currentCountry) ? (stage === 20 ? '12.4 miles' : '1.9 miles') : stage+' km';
   const message = stage === 20
     ? 'Inspection station ahead: '+station.name+'. Review its status. Report it when you can see the sign.'
-    : 'Inspection station approaching: '+station.name+'. '+status+'. Follow posted signs.';
+    : (stage===0.15?'Inspection station here: ':'Inspection station approaching: ')+station.name+'. '+status+'. Follow posted signs.';
   const notice = $('station-warning-notice');
-  notice.textContent = 'Within '+distance+' · '+message;
+  const lamps=document.createElement('span');
+  lamps.className='station-lamps';
+  lamps.setAttribute('aria-hidden','true');
+  lamps.append(document.createElement('i'),document.createElement('i'));
+  const name=document.createElement('strong');
+  name.textContent=station.name;
+  const detail=document.createElement('span');
+  detail.textContent='Within '+distance+' · '+status+'. Follow posted signs.';
+  notice.dataset.status=observation?.status||'unknown';
+  notice.dataset.leaving='false';
+  notice.replaceChildren(lamps,name,detail);
   clearTimeout(stationNoticeTimer);
-  stationNoticeTimer = setTimeout(()=>{notice.textContent='';},20000);
+  stationNoticeTimer=setTimeout(()=>{
+    notice.dataset.leaving='true';
+    stationNoticeTimer=setTimeout(()=>notice.replaceChildren(),350);
+  },12000);
   if(typeof speakNavigationText==='function')speakNavigationText(message);
 
 }
 
 function nextAlertStation() {
-  return roadFacilities.find(station=>station.at>=progress && isGovernmentFacility(station) &&
-    facilityVisible(station) && stationMatchesRoute(station)) || null;
+  return roadFacilities.find(station=>station.at>=progress-50 && isGovernmentFacility(station) && stationMatchesRoute(station)) || null;
 }
 
 function createStationReportPanel(station) {

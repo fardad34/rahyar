@@ -5,22 +5,41 @@
  let intent=false,refreshing=false;
  try{const durable=localStorage.getItem(intentKey);intent=durable?durable==='active':sessionStorage.getItem(intentKey)==='active';}catch{try{intent=sessionStorage.getItem(intentKey)==='active';}catch{}}
  window.rahyarSetTripIntent=active=>{intent=active;try{sessionStorage.setItem(intentKey,active?'active':'inactive');}catch{}try{localStorage.setItem(intentKey,active?'active':'inactive');}catch{}};
+ let lastWatchAttach=0;
  function attachLiveWatch(){
-  if(!intent||!dest||coords.length<2||isDemo||!navigator.geolocation)return;
-  if(watch!==null)navigator.geolocation.clearWatch(watch);
-  const token=session;
-  watch=navigator.geolocation.watchPosition(p=>onPosition(p,token),error=>{if(token!==session)return;gpsError(error);if(error.code===1){window.rahyarSetTripIntent(false);stopWatch();}},{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  if(!intent||!dest||isDemo||!navigator.geolocation)return;
+  lastWatchAttach=Date.now();
+  attachGpsWatch();
   $('route-vehicle').disabled=true;$('start').hidden=true;$('stop').hidden=false;$('end-trip').hidden=false;
   setScreenAwakeReason('trip',true);updateRouteGuidance();
  }
+ function restoreVisibleTrip(){
+  if(document.visibilityState!=='visible')return;
+  if(intent&&(watch!==null||coords.length>1))attachLiveWatch();
+  navigationMap?.resize();map?.invalidateSize({pan:false});
+  if(coords.length>1)window.RahyarMapRecovery?.(true);
+ }
  document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){window.rahyarCheckpointTrip?.().catch(()=>{});return;}
-  if(intent&&coords.length>1)attachLiveWatch();
-  navigationMap?.resize();map?.invalidateSize({pan:false});
+  restoreVisibleTrip();
  });
- setInterval(()=>{if(intent&&coords.length>1)window.rahyarCheckpointTrip?.().catch(()=>{});},15000);
+ setInterval(()=>{
+  if(!intent)return;
+  if(coords.length>1)window.rahyarCheckpointTrip?.().catch(()=>{});
+  if(document.visibilityState==='visible'&&watch!==null&&Date.now()-Math.max(lastWatchAttach,gpsTime)>45000)attachLiveWatch();
+ },15000);
  window.addEventListener('pagehide',()=>window.rahyarCheckpointTrip?.().catch(()=>{}));
- window.addEventListener('pageshow',event=>{if(event.persisted&&intent)attachLiveWatch();});
+ window.addEventListener('pageshow',event=>{if(event.persisted)restoreVisibleTrip();});
+ window.rahyarExitApp=async()=>{
+  window.rahyarSetTripIntent(false);
+  const journal=endTrip();
+  setScreenAwakeReason('focus',false);
+  window.rahyarStopRoadMedia?.();
+  window.rahyarStopOfflineTracking?.();
+  await journal;
+  window.close();
+  location.replace('about:blank');
+ };
  window.rahyarRestoreUpgradeSession=()=>{
   let resume=false;
   try{const saved=JSON.parse(sessionStorage.getItem(upgradeKey)||'null');resume=intent&&(!saved||(Date.now()-saved.at<120000&&saved.destination===dest?.coord?.join(',')));sessionStorage.removeItem(upgradeKey);}catch{}

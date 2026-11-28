@@ -203,7 +203,7 @@ function drawRoute(){syncNavigationData();
   if(fitMain){lastMainFitRevision=routeRevision;fitNavigationRoute()}
   if(!map)return;
   if(routeLayer)map.removeLayer(routeLayer);
-  routeLayer=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#8538d1',weight:9,opacity:1}).addTo(map);
+  routeLayer=L.polyline(coords.map(c=>[c[1],c[0]]),{color:'#21a96b',weight:9,opacity:1}).addTo(map);
   markers.forEach(m=>map.removeLayer(m));
   markers=[];
   targets.filter(facilityVisible).forEach(t=>{const pin=t.routeCoord||t.coord;const m=L.circleMarker([pin[1],pin[0]],{radius:5,color:'#fff',weight:2,fillColor:t.kind&&t.kind!=='city'?'#e7be78':'#a5e7cb',fillOpacity:1}).addTo(map).bindTooltip(()=>{const label=document.createElement('span');label.textContent=t.name+' · '+kindLabel(t);return label},{direction:'top'});markers.push(m)});
@@ -451,12 +451,23 @@ async function calculate(c,token,heading) {
     if(token===session){routeBusy=false;updateRouteGuidance();if(coords.length)window.RahyarJournal?.offer(c).catch(()=>{});}
   }
 }
+let gpsWatchRevision=0;
+function attachGpsWatch(){
+  if(watch!==null)navigator.geolocation.clearWatch(watch);
+  const token=session,revision=++gpsWatchRevision;
+  const current=()=>token===session&&revision===gpsWatchRevision;
+  watch=navigator.geolocation.watchPosition(p=>{if(current())onPosition(p,token);},error=>{
+    if(!current())return;
+    gpsError(error);
+    if(error.code===1){window.rahyarSetTripIntent?.(false);stopWatch();}
+  },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+}
 function onPosition(p,token) {
   if(token!==session)return;
   if(Number.isFinite(p.timestamp)&&Date.now()-p.timestamp>20000){updateGpsStatus('Waiting for a fresh GPS fix; selected route retained.',true);return;}
   const c=[p.coords.longitude,p.coords.latitude];
   lastPos=c;
-  window.RahyarJournal?.begin(c).then(()=>window.RahyarJournal?.record(p)).catch(()=>{});
+  window.RahyarJournal?.begin(c,token).then(()=>{if(token===session)window.RahyarJournal?.record(p);}).catch(()=>{});
   gpsTime=Date.now();
   if(!tripDeparture)tripDeparture={place:{coord:c},time:new Date(gpsTime)};
   recordGpsHeading(p.coords,c);
@@ -529,7 +540,7 @@ function stopWatch(){setScreenAwakeReason('trip',false);
   updateRouteGuidance()}
 function endTrip(arrived=false){
   window.RahyarLocalCorridors?.reset();activeNavigationRoute=null;
-  window.RahyarJournal?.finish(arrived).catch(()=>{});
+  const journal=window.RahyarJournal?.finish(arrived).catch(()=>{});
   window.rahyarSetTripIntent?.(false);
   stopWatch();
   tripEndState=arrived?'Arrived at your destination':'Trip ended';
@@ -556,6 +567,7 @@ function endTrip(arrived=false){
   updateGpsStatus('Trip tracking stopped.');
   render();
   updateRouteGuidance();
+  return journal;
 }
 function start(){
   if(!dest){message('Choose a city or street address before starting the trip.',true);$('query').focus();return}
@@ -614,7 +626,7 @@ function start(){
   if(map){if(routeLayer)map.removeLayer(routeLayer);
     markers.forEach(m=>map.removeLayer(m));
     if(positionLayer)map.removeLayer(positionLayer);
-    positionLayer=null}const token=session;
+    positionLayer=null}
   window.rahyarSetTripIntent?.(true);
   $('route-vehicle').disabled=true;
   updateGpsStatus("Waiting for location permission and GPS\u2026");
@@ -626,7 +638,7 @@ function start(){
   $('trip-actions').hidden=false;
   $('route-label').textContent="Your location \u2192 "+dest.name;
   message('');
-  watch=navigator.geolocation.watchPosition(p=>onPosition(p,token),e=>{if(token!==session)return;gpsError(e);if(e.code===1){stopWatch();window.rahyarSetTripIntent?.(false);} /* Temporary GPS errors keep the active trip and watch alive. */},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+  attachGpsWatch();
   updateRouteGuidance()}
 $('retry-route').onclick=()=>{if(lastPos&&!isDemo&&!routeBusy)calculate(lastPos,session)};
 for(const id of ['route-choice','focus-route-choice'])$(id).onchange=()=>chooseRoute(Number($(id).value));

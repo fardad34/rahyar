@@ -10,7 +10,7 @@
   for(const [heading,places] of [['Favorites',favorites],['Recent destinations',history]]){
    const title=document.createElement('strong');title.textContent=heading;box.append(title);
    for(const place of places){const row=document.createElement('div'),use=document.createElement('button'),fav=document.createElement('button');
-    use.type=fav.type='button';use.className=fav.className='secondary';use.textContent=place.addressLabel||place.name;use.onclick=()=>{if(watch!==null&&!confirm('Change the destination and recalculate your active route?'))return;setSearchedDestination(place,false);};
+    use.type=fav.type='button';use.className=fav.className='secondary';use.textContent=place.addressLabel||place.name;use.onclick=()=>{if(watch!==null&&!confirm('Change the destination and recalculate your active route?'))return;setSearchedDestination(place,true);if(watch!==null)window.rahyarShowDestinationPreview?.();};
     const chosen=favorites.some(f=>same(f,place));fav.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="'+(chosen?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 3 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>';fav.setAttribute('aria-label',chosen?'Remove favorite':'Add favorite');fav.onclick=()=>{if(!chosen&&favorites.length>=5){message('Five quick favorites are already saved. Remove one before adding another.',true);return;}write(favoritesKey,chosen?favorites.filter(f=>!same(f,place)):[place,...favorites]);renderHistory();};
     row.append(use,fav);box.append(row);
    }

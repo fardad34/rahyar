@@ -20,7 +20,6 @@
   }searchPanel.querySelector('.searchrow').after(quick);
   const toggleSearch=show=>{searchPanel.hidden=!show;searchToggle.setAttribute('aria-expanded',String(show));if(show){$('query').focus();sheet.setState('collapsed');}};
   const searchToggle=button('search','Search destinations',()=>toggleSearch(searchPanel.hidden));searchToggle.id='nav-search-toggle';
-  const weatherBadge=node('div','nav-weather-badge');weatherBadge.id='nav-weather-badge';weatherBadge.hidden=true;header.append(weatherBadge);
   const vehicle=button('truck','Vehicle selection',()=>toggleSearch(searchPanel.hidden));vehicle.id='nav-vehicle';header.append(vehicle);
   function featureDialog(id,title,content){const d=node('dialog','nav-feature-dialog','<div class="nav-dialog-heading"><h2>'+title+'</h2></div>');d.id=id;const close=button('close','Close '+title,()=>d.close());d.firstElementChild.append(close);if(content)d.append(content);document.body.append(d);return d;}
   const menu=node('div','nav-menu-list');const menuDialog=featureDialog('nav-menu-dialog','Your road, your way',menu);
@@ -40,6 +39,7 @@
   const testAlert=button('voice','Test warning sound',()=>unlockNavigationAudio().then(ready=>{if(ready){speedAlertBeep(2);$('voice-status').textContent=navigationAlertVolume>0?'Warning sound requested. Confirm audibility and check device/Bluetooth volume.':'Warning volume is muted.';}else $('voice-status').textContent='Audio is blocked or unavailable. Tap Test warning sound again and check Safari audio output.';}));testAlert.id='test-alert';testAlert.append(document.createTextNode('Test warning sound'));audioDialog.append(soundLabel,alertLabel,testAlert);const audioHelp=document.createElement('p');audioHelp.textContent='Use Test Voice to request speech in your browser. If sound is blocked, tap it again. App volume cannot exceed the device volume; check iPad volume and Bluetooth output.';audioDialog.append(audioHelp);
   const audioOpen=()=>{enabled.checked=spokenAlerts;sound.value=navigationAlertSound;alertVolume.value=navigationAlertVolume;audioDialog.showModal();};const audioSettings=button('voice','Voice & alert sound',audioOpen);audioSettings.append(document.createTextNode('Voice & alert sound'));$('app-settings').append(audioSettings);menuItem('voice','Voice & alert sound',audioOpen);
   menuItem('search','Recent destinations & favorites',()=>{toggleSearch(true);document.querySelector('.destination-history').open=true;});menuItem('pin','Mark / choose a place on map',()=>window.RahyarMapPlaces?.start());menuItem('pin','Saved addresses & labels',()=>window.RahyarMapPlaces?.list());menuItem('route','Trip reports & sharing',()=>window.RahyarJournal?.show());menuItem('settings','Settings, voice & languages',()=>openAppDialog($('app-settings')));menuItem('truck','Truck & trailer configuration',()=>openTruckSettings());menuItem('user','Account & shared reports',cloudOpen);menuItem('layers','Offline route & storage',()=>{offlineDialog.showModal();offlineDialog.querySelector('details').open=true;});menuItem('radio','Radio & media',mediaOpen);menuItem('radio','Media settings',()=>{mediaSettings.showModal();$('road-media').open=true;});menuItem('route','Show route alternatives on map',()=>{sheet.setState('collapsed');if(coords.length)window.RahyarRouteOptions?.fit({nearby:true});window.RahyarLocalCorridors?.discover({force:true,manual:true}).catch(()=>{});});menuItem('route','Update app',()=>window.rahyarUpgradeApp?.());
+  menuItem('close','Exit',()=>window.rahyarExitApp?.());
   const extraDialog=featureDialog('nav-extra-dialog','Road alerts & carrier reviews',$('tools-menu'));menuItem('report','Official alerts & carrier reviews',()=>{extraDialog.showModal();$('tools-menu').open=true;});
   const turn=node('section','nav-turn',icon('arrow'));turn.id='nav-turn';turn.setAttribute('aria-label','Next maneuver');turn.append($('focus-guidance'));shell.append(turn);const roadPill=$('focus-current-road');roadPill.classList.add('nav-road-pill');const roadSlot=node('div','nav-road-slot');roadSlot.id='nav-road-slot';roadSlot.append(roadPill);shell.append(roadSlot);
   function layoutRoadSlot(){const sheet=$('nav-trip-sheet'),km=$('nav-km-marker');const box=sheet?.getBoundingClientRect();const docked=box&&box.left<innerWidth*.25&&box.right<innerWidth*.75;const left=docked?box.right+12:12;const marker=km&&!km.hidden?km.getBoundingClientRect():null;const right=marker?Math.max(12,innerWidth-marker.left+12):96;roadSlot.hidden=(!docked&&sheet?.dataset.state!=='collapsed')||innerWidth-right-left<60;roadSlot.style.left=left+'px';roadSlot.style.right=right+'px';roadSlot.style.bottom=docked?'calc(16px + env(safe-area-inset-bottom,0px))':'calc(120px + env(safe-area-inset-bottom,0px))';}
@@ -47,7 +47,14 @@
   const speeds=node('aside','nav-speeds');speeds.setAttribute('aria-label','Speed information');const current=node('div','nav-current-speed','<span class="nav-speed-caption">LIMIT</span>');current.append($('hud-road-limit'));const upcoming=node('div','nav-upcoming-speed');upcoming.append($('hud-upcoming'));const actual=node('div','nav-actual-speed','<span class="nav-speed-caption">SPEED</span>');actual.append($('hud-car-speed'),$('hud-car-unit'));speeds.append(actual,current,upcoming);shell.append(speeds);
   const rail=node('nav','nav-map-controls');rail.setAttribute('aria-label','Map controls');const layersDialog=featureDialog('nav-layers-dialog','Map appearance');
   for(const [name,label,change]of [['plus','Zoom in',1],['minus','Zoom out',-1]]){const zoom=button(name,label,()=>{if(navigationReady)navigationMap.easeTo({zoom:navigationMap.getZoom()+change,duration:200});else if(map)map.setZoom(map.getZoom()+change);});zoom.append(document.createTextNode(label));layersDialog.append(zoom);}
-  for(const id of ['map-night','map-satellite','map-traffic','map-dimension','focus-orientation','fit'])layersDialog.append($(id));const dataStatus=node('p','nav-road-data-status','Road data: waiting for mapped signals, junctions, cameras and kilometre markers. Coverage is incomplete.');dataStatus.id='nav-road-data-status';layersDialog.append(dataStatus);const audioMap=button('voice','Voice & alert sound',audioOpen);audioMap.append(document.createTextNode('Voice & alert sound'));layersDialog.append(audioMap);layersDialog.append(node('p','nav-truck-data-note','Verified truck-permitted road highlighting is unavailable: the current map data cannot confirm all vehicle restrictions. The purple route uses truck costing, not a legal-access certification.'));
+  for(const id of ['map-night','map-satellite','map-traffic','map-dimension','focus-orientation','fit'])layersDialog.append($(id));const dataStatus=node('p','nav-road-data-status','Road data: waiting for mapped signals, junctions, cameras and kilometre markers. Coverage is incomplete.');dataStatus.id='nav-road-data-status';layersDialog.append(dataStatus);const audioMap=button('voice','Voice & alert sound',audioOpen);audioMap.append(document.createTextNode('Voice & alert sound'));layersDialog.append(audioMap);layersDialog.append(node('p','nav-truck-data-note','Verified truck-permitted road highlighting is unavailable: the current map data cannot confirm all vehicle restrictions. The green route uses truck costing, not a legal-access certification.'));
+  for(const id of ['traffic-legend','route-type','map-status','map-render-status'])layersDialog.append($(id));
+  const leafletAttribution=map?.attributionControl?.getContainer();
+  if(leafletAttribution){
+   const credits=node('details','nav-map-credits','<summary aria-label="Map attribution" title="Map attribution">ⓘ</summary>');
+   leafletAttribution.parentNode.append(credits);
+   credits.append(leafletAttribution);
+  }
   const voiceControl=button('voice','Voice guidance',audioOpen);const dimension=button('cube','Switch 2D or 3D map',()=>{ $('map-dimension').click(); });dimension.id='nav-dimension-toggle';const zoomGroup=node('div','nav-zoom-group');for(const [name,label,change]of [['plus','Zoom in',1],['minus','Zoom out',-1]])zoomGroup.append(button(name,label,()=>{if(navigationReady)navigationMap.easeTo({zoom:navigationMap.getZoom()+change,duration:200});else if(map)map.setZoom(map.getZoom()+change);}));dimension.hidden=true;rail.append(button('layers','Map layers',()=>layersDialog.showModal()),button('locate','Recenter on vehicle',()=>recenterOnVehicle()),zoomGroup);
   const rightRail=node('nav','nav-right-controls');rightRail.setAttribute('aria-label','Navigation controls');const compass=button('compass','Map orientation',()=> $('focus-orientation').click());const alternatives=button('route','Route alternatives',()=>{sheet.setState('full');$('route-choices').scrollIntoView({block:'nearest'});});rightRail.append(compass,searchToggle,voiceControl);shell.append(rightRail);
   rightRail.append(...rail.children);rail.hidden=true;
@@ -56,6 +63,29 @@
   const trip=node('section','nav-trip-sheet');trip.id='nav-trip-sheet';trip.setAttribute('aria-label','Trip details');
   const handle=node('button','nav-sheet-handle','<span></span>');handle.type='button';handle.id='nav-sheet-handle';handle.setAttribute('aria-label','Expand trip details');handle.setAttribute('aria-controls','nav-sheet-body');const collapse=button('chevron','Collapse trip panel',()=>sheet.setState('collapsed'));collapse.id='nav-sheet-close';trip.append(handle,collapse);
   const summary=node('div','nav-trip-overview','<div class="nav-trip-time"><strong id="nav-remaining-time">Ready to go</strong><span id="nav-trip-meta">Choose your next destination</span></div><div class="nav-trip-destination">'+icon('pin')+'<span id="nav-destination">The road ahead</span></div>');const go=button('route','Start or resume this trip',()=>{toggleSearch(false);$('start').click();});go.id='nav-go';summary.append(go);trip.append(summary);
+  let weatherCity=null;
+  const weatherDialog=featureDialog('nav-weather-dialog','Live weather map');
+  const weatherLayer=node('select','nav-weather-layer');weatherLayer.setAttribute('aria-label','Weather layer');
+  for(const [value,label] of [['rain','Precipitation'],['clouds','Clouds'],['wind','Wind'],['temp','Temperature']])weatherLayer.append(new Option(label,value));
+  const weatherFrame=node('iframe','nav-weather-frame');weatherFrame.title='Windy live weather map';
+  function loadWeatherMap(){
+   if(!weatherCity)return;
+   const [lon,lat]=weatherCity.coord;
+   const url=new URL('https://embed.windy.com/embed2.html');
+   url.search=new URLSearchParams({lat,lon,zoom:7,overlay:weatherLayer.value,level:'surface',product:'ecmwf',marker:'true',detailLat:lat,detailLon:lon});
+   weatherFrame.src=url.href;
+  }
+  weatherLayer.onchange=loadWeatherMap;
+  weatherDialog.append(weatherLayer,weatherFrame);
+  weatherDialog.addEventListener('close',()=>weatherFrame.removeAttribute('src'));
+  const weatherBadge=button('layers','Open live weather map',()=>{loadWeatherMap();weatherDialog.showModal();});
+  weatherBadge.id='nav-weather-badge';weatherBadge.classList.add('nav-weather-badge');weatherBadge.hidden=true;
+  const destination=summary.querySelector('.nav-trip-destination');
+  const destinationInfo=node('div','nav-destination-info');
+  destination.replaceWith(destinationInfo);destinationInfo.append(destination,weatherBadge);
+  const stationNotice=$('station-warning-notice');
+  stationNotice.classList.add('nav-station-warning');
+  shell.append(stationNotice);
   const content=node('div','nav-sheet-body');content.id='nav-sheet-body';trip.append(content);content.append($('focus-trip-summary'));
   const full=node('div','nav-full-details');full.append(document.querySelector('.focus-watch'));full.append(document.querySelector('.region-panel'));full.append($('route-choices'));full.append($('route-stops'));const legacySummary=$('trip-summary-title').closest('section')||$('trip-summary-title').closest('.panel');if(legacySummary)full.append(legacySummary);if(!full.querySelector('#total'))full.append($('total').closest('section')||$('total').closest('.panel'));
   const roadData=document.querySelector('.focus-extra');if(roadData)full.append(roadData);full.append($('trip-actions'));content.append(full);shell.append(trip);
@@ -77,9 +107,21 @@
    if(active&&!navigationWasActive){toggleSearch(false);sheet.setState('half');}navigationWasActive=active;
    shell.classList.toggle('nav-has-route',valid);endControl.disabled=!valid&&watch===null;go.hidden=watch!==null||!dest;turn.hidden=!valid;$('nav-destination').textContent=dest?.name||'The road ahead';
    if(valid){const seconds=Math.max(0,(timeAtDistance(routeLength)||0)-(timeAtDistance(progress)||0));const minutes=Math.ceil(seconds/60);$('nav-remaining-time').textContent=(minutes>=60?Math.floor(minutes/60)+' h ':'')+(minutes%60)+' min';const end={...dest,at:routeLength};$('nav-trip-meta').textContent=fa(roadDistance(routeLength-progress))+' '+distanceUnit()+' · Arrival '+arrivalLabel(arrivalFor(end),end).time;refreshFocusSummary(true);}else{$('nav-remaining-time').textContent=dest?'Start your trip':'Ready to go';$('nav-trip-meta').textContent=dest?'Route will use your selected vehicle':'Search a destination or tap the map';}
-   const selected=$('route-vehicle').value;vehicle.innerHTML='<img class="vehicle-graphic" src="navigation-icons/'+(selected==='truck'?'truck':'car')+'-side-3d.svg" alt=""><span>'+(selected==='truck'?'Truck':'Car')+'</span>';
+   const selected=$('route-vehicle').value;
+   if(vehicle.dataset.vehicle!==selected){
+    vehicle.dataset.vehicle=selected;
+    vehicle.innerHTML='<img class="vehicle-graphic" src="navigation-icons/'+(selected==='truck'?'truck':'car')+'-side-3d.svg" alt=""><span>'+(selected==='truck'?'Truck':'Car')+'</span>';
+   }
    dimension.setAttribute('aria-pressed',String(navigationPitch));dimension.innerHTML='<span class="nav-dimension-label">'+(navigationPitch?'3D':'2D')+'</span>';compass.setAttribute('aria-pressed',String(mapHeadingUp));alternatives.disabled=!valid;
-   const weatherCity=cityTargets.find(c=>!c.final&&c.at>=progress);const cached=weatherCity?forecastCache.get(forecastKey(weatherCity)):null;const forecast=weatherCity?forecastAt(cached?.data,arrivalFor(weatherCity)):null;weatherBadge.hidden=!forecast||forecast.outside;if(forecast&&!forecast.outside)weatherBadge.textContent=formatTemperature(forecast.temp)+' · '+weatherCity.name;
+   if(!weatherDialog.open){
+    weatherCity=valid?(cityTargets.find(c=>!c.final&&c.at>=progress)||{...dest,at:routeLength}):null;
+    const cached=weatherCity&&forecastCache.get(forecastKey(weatherCity));
+    const forecast=cached&&forecastAt(cached.data,arrivalFor(weatherCity));
+    weatherBadge.hidden=!weatherCity;
+    const label=forecast&&!forecast.outside?formatTemperature(forecast.temp):'Weather';
+    if(weatherBadge.textContent!==label)weatherBadge.textContent=label;
+    if(weatherCity)weatherBadge.setAttribute('aria-label','Open live weather map for '+weatherCity.name);
+   }
    enabled.checked=spokenAlerts;voiceControl.setAttribute('aria-pressed',String(spokenAlerts));current.title=$('hud-limit-source').textContent;current.classList.toggle('unknown',$('hud-road-limit').textContent==='—');actual.classList.toggle('over-limit',$('hud-car-ring').classList.contains('over-limit'));
    const next=routeManeuvers.find(step=>step.at>=progress-12);turn.firstElementChild.querySelector('path').setAttribute('d',next?.direction==='right'?'M5 21V13a5 5 0 0 1 5-5h9m-5-5 5 5-5 5':next?.direction==='left'?'M19 21V13a5 5 0 0 0-5-5H5m5-5-5 5 5 5':paths.arrow);
    for(const d of [$('hud-upcoming'),...document.querySelectorAll('.nav-feature-dialog')])if(d.tagName==='DIALOG'&&d.open)d.classList.add('nav-open');

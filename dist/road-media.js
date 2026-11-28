@@ -46,6 +46,7 @@
     }
   }
 
+  window.rahyarStopRoadMedia=()=>pausePlayback();
   function pausePlayback() {
     playbackWanted = false; navigationResumePending=false; ++playbackRevision;
     ++playAttempt;

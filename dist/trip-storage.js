@@ -29,7 +29,20 @@
   draw();
   if(navigator.storage?.estimate){const storage=await navigator.storage.estimate();$('offline-size').textContent+=' Browser storage used: '+((storage.usage||0)/1024/1024).toFixed(1)+' MB. Safari may evict data.';}
  }
- window.rahyarCheckpointTrip=async()=>{if(snapshot){snapshot={...snapshot,updatedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};mirror(snapshot);await transaction('readwrite',s=>s.put(snapshot,'last'));}};
+ window.rahyarCheckpointTrip=async()=>{
+  if(!snapshot||coords.length<2||!dest||snapshot.destination.coord.join(',')!==dest.coord.join(','))return;
+  const cities=cityTargets.map(c=>({...c}));
+  if(snapshot.progress===progress&&snapshot.departure===tripDeparture&&
+    JSON.stringify(snapshot.cities)===JSON.stringify(cities))return;
+  const value={...snapshot,updatedAt:Date.now(),progress,departure:tripDeparture,cities};
+  snapshot=value;mirror(value);
+  await transaction('readwrite',s=>s.put(value,'last'));
+ };
+ window.rahyarStopOfflineTracking=()=>{
+  if(gpsWatch===null)return;
+  navigator.geolocation.clearWatch(gpsWatch);
+  gpsWatch=null;
+ };
  window.rahyarPersistTrip=async(route,via)=>{
   previewAttempted=true;
   const value={version:1,route,alternatives:routeChoices.slice(0,3),selectedChoice:Number($('route-choice').value)||0,maneuvers:routeManeuvers,via,viaValue:$('route-via').value,destination:dest,vehicle:activeRouteVehicle,profile:activeTruckProfile,origin:route.geometry.coordinates[0],savedAt:Date.now(),progress,departure:tripDeparture,cities:cityTargets.map(c=>({...c}))};
